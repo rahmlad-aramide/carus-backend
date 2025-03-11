@@ -7,8 +7,6 @@ import passport from 'passport'
 import path from 'path'
 import 'reflect-metadata'
 
-import oxAdminRoutes from './0x/admin/routes'
-import oxRoutes from './0x/routes'
 import env from './config/environment/index'
 import { AppDataSource } from './data-source'
 import mainRoutes from './routes'
@@ -47,8 +45,6 @@ const start = async () => {
   // })
   app.use('/v1', mainRoutes)
   app.use('/v1/admin', adminRoutes)
-  app.use('/v1/0x', oxRoutes)
-  app.use('/v1/0x/admin', oxAdminRoutes)
   app.set('view engine', 'pug')
   app.set('views', path.join(__dirname + '../views'))
   const server = app.listen(env.PORT, () => {
