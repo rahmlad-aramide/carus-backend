@@ -1,0 +1,396 @@
+import { Request, Response } from 'express'
+import { StatusCodes } from 'http-status-codes'
+
+import { CityEnum, RegionEnum } from '../../@types/user'
+import { AppDataSource } from '../../data-source'
+import { User } from '../../entities/user'
+import { Wallet } from '../../entities/wallet'
+import {
+  generalResponse,
+  returnSuccess,
+  userNotFound,
+} from '../../helpers/constants'
+import catchController from '../../utils/catchControllerAsyncs'
+
+const regionList = Object.values(RegionEnum).join(', ')
+const cityList = Object.values(CityEnum).join(', ')
+
+export const getAccount = catchController(
+  async (req: Request, res: Response) => {
+    const user: User | undefined = req.user
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
+    }
+
+    const walletRepository = AppDataSource.getRepository(Wallet)
+
+    const wallet = await walletRepository.findOne({
+      relations: {
+        user: true,
+      },
+      where: {
+        user: {
+          id: user.id,
+        },
+      },
+    })
+
+    res.status(StatusCodes.OK).json(
+      generalResponse(
+        StatusCodes.OK,
+        {
+          id: user.id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          status: user.status,
+          phone: user.phone,
+          address: user.address,
+          role: user.role,
+          avatar: user.avatar,
+          gender: user.gender,
+          city: user.city,
+          region: user.region,
+          created_at: user.createdAt,
+          last_updated: user.updatedAt,
+          wallet: {
+            naira_amount: wallet?.naira_amount,
+            points: wallet?.points,
+            last_transaction_time: wallet?.updatedAt,
+          },
+        },
+        [],
+        returnSuccess,
+      ),
+    )
+  },
+)
+
+export const editProfile = catchController(
+  // eslint-disable-next-line sonarjs/cognitive-complexity
+  async (req: Request, res: Response) => {
+    // const payload: { username?: string, first_name?: string, last_name?: string, phone?: string } = {}
+
+    const user: User | undefined = req.user
+    const userRepository = AppDataSource.getRepository(User)
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
+    }
+
+    if (req.body.username) {
+      const existingUsername = await userRepository.findOne({
+        where: {
+          username: req.body.username,
+        },
+      })
+
+      if (existingUsername) {
+        return res
+          .status(StatusCodes.CONFLICT)
+          .json(
+            generalResponse(
+              StatusCodes.CONFLICT,
+              {},
+              [],
+              'This username is already taken',
+            ),
+          )
+      }
+
+      if (req.body.username.includes(' ') || req.body.username.length < 3) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'Please make sure username does not contain spaces and has 3 or more characters',
+            ),
+          )
+      }
+
+      if (existingUsername != req.body.username && req.body.username === '') {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'username cannot be empty',
+            ),
+          )
+      }
+
+      user.username = req.body.username
+      const randomNumber = Math.floor(Math.random() * (4 - 1 + 1)) + 1
+      user.avatar = `https://robohash.org/${req.body.username}?set=${randomNumber}&size=500x500`
+    }
+
+    if (req.body.first_name) {
+      if (!/^[A-Za-z\-']+$/.test(req.body.first_name)) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'Please make sure first name does not contain spaces and has special characters; only dashes and apostrophes are allowed',
+            ),
+          )
+      }
+
+      if (
+        user.first_name != req.body.first_name &&
+        req.body.first_name === ''
+      ) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'first name cannot be empty',
+            ),
+          )
+      }
+
+      user.first_name = req.body.first_name
+    }
+
+    if (req.body.last_name) {
+      if (!/^[A-Za-z\-']+$/.test(req.body.last_name)) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'Please make sure last name does not contain spaces and has special characters; only dashes and apostrophes are allowed',
+            ),
+          )
+      }
+
+      if (user.last_name != req.body.last_name && req.body.last_name === '') {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'last name cannot be empty',
+            ),
+          )
+      }
+
+      user.last_name = req.body.last_name
+    }
+
+    if (req.body.phone) {
+      const existingPhone = await userRepository.findOne({
+        where: {
+          phone: req.body.phone,
+        },
+      })
+      if (existingPhone) {
+        return res
+          .status(StatusCodes.CONFLICT)
+          .json(
+            generalResponse(
+              StatusCodes.CONFLICT,
+              {},
+              [],
+              'This phone number is already linked to another account',
+            ),
+          )
+      }
+
+      const phoneRegex = /^[0-9]{10}$/
+      if (!req.body.phone.match(phoneRegex)) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'Please enter a valid phone number',
+            ),
+          )
+      }
+
+      if (user.phone != req.body.phone && req.body.phone === '') {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'phone number cannot be empty',
+            ),
+          )
+      }
+
+      user.phone = req.body.phone
+    }
+
+    if (req.body.address && req.body.address.length < 5) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'Address must be at least 5 characters long',
+          ),
+        )
+    }
+
+    if (user.address != req.body.address && req.body.address === '') {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'address cannot be empty',
+          ),
+        )
+    }
+
+    user.address = req.body.address
+
+    if (
+      req.body.region &&
+      !Object.values(RegionEnum).includes(req.body.region)
+    ) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            `Invalid region, region list include: [${regionList}]`,
+          ),
+        )
+    }
+
+    if (user.region != req.body.region && req.body.region === '') {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'region cannot be empty',
+          ),
+        )
+    }
+
+    user.region = req.body.region
+
+    if (req.body.city && !Object.values(CityEnum).includes(req.body.city)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            `Invalid city, city list include: [${cityList}]`,
+          ),
+        )
+    }
+
+    if (user.city != req.body.city && req.body.city === '') {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'city number cannot be empty',
+          ),
+        )
+    }
+
+    user.city = req.body.city
+
+    user.updatedAt = new Date(Date.now())
+
+    await userRepository.save(user)
+    return res.status(StatusCodes.OK).json(
+      generalResponse(
+        StatusCodes.OK,
+        {
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          avatar: user.avatar,
+          address: user.address,
+          region: user.region,
+          city: user.city,
+          last_updated: user.updatedAt,
+        },
+        [],
+        'Profile updated successfully.',
+      ),
+    )
+  },
+)
+
+// export const editAddress = catchController(async (req: Request, res: Response) => {
+//     // const payload: { username?: string, first_name?: string, last_name?: string, phone?: string } = {}
+//     const { address, region, city } = req.body
+//     const requiredFields = ['address', 'region', 'city']
+//     const user = req.user
+//     const userRepository = AppDataSource.getRepository(User)
+
+//     if (requiredFields.some(field => !req.body[field])) {
+//         return res.status(StatusCodes.BAD_REQUEST).json(generalResponse(StatusCodes.BAD_REQUEST, {}, [], 'Please make sure you pass all the required fields'))
+//     }
+
+//     if (address && address.length < 5) {
+//         return res.status(StatusCodes.BAD_REQUEST).json(generalResponse(StatusCodes.BAD_REQUEST, {}, [], 'Address must be at least 5 characters long'))
+//     }
+
+//     if (region && !Object.values(RegionEnum).includes(region)) {
+//         return res.status(StatusCodes.BAD_REQUEST).json(generalResponse(StatusCodes.BAD_REQUEST, {}, [], `Invalid region, region list include: [${regionList}]`))
+//     }
+
+//     if (city && !Object.values(CityEnum).includes(city)) {
+//         return res.status(StatusCodes.BAD_REQUEST).json(generalResponse(StatusCodes.BAD_REQUEST, {}, [], `Invalid city, city list include: [${cityList}]`))
+//     }
+
+//     user.updatedAt = (new Date(Date.now()))
+//     user.address = address
+//     user.city = city
+//     user.region = region
+
+//     await userRepository.save(user)
+//     return res.status(StatusCodes.OK).json(generalResponse(StatusCodes.OK, {
+//         address: user.address,
+//         city: user.city,
+//         region: user.region,
+//         last_updated: user.updatedAt,
+//     }, [], "Pickup address updated successfully."));
+
+// });
