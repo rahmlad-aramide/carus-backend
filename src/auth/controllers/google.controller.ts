@@ -10,123 +10,132 @@ import { errorMessages } from '../../helpers/error-messages'
 import generateToken from '../../helpers/generateToken'
 import catchController from '../../utils/catchControllerAsyncs'
 
-export const googleAuth = catchController(async (req: Request, res: Response) => {
-  const { token }: { token: string } = req.body
+export const googleAuth = catchController(
+  async (req: Request, res: Response) => {
+    const { token }: { token: string } = req.body
 
-  // const encodedToken = encodeURIComponent(token)
+    // const encodedToken = encodeURIComponent(token)
 
-  if (!token || typeof token !== 'string') {
-    return res
-      .status(StatusCodes.FORBIDDEN)
-      .json(
+    if (!token || typeof token !== 'string') {
+      return res
+        .status(StatusCodes.FORBIDDEN)
+        .json(
+          generalResponse(
+            StatusCodes.FORBIDDEN,
+            {},
+            [],
+            'Invalid token or token missing',
+          ),
+        )
+    }
+
+    const {
+      data: googleInfo,
+    }: {
+      data: {
+        id: string
+        email: string
+        verified_email: boolean
+        name: string
+        given_name: string
+        family_name: string
+        picture: string
+        locale: string
+      }
+    } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const user = await userRepository.findOne({
+      where: { email: googleInfo.email },
+    })
+
+    if (user && !user.googleId) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            errorMessages.USER_NOT_FOUND_ERROR,
+          ),
+        )
+    }
+
+    if (user && user.status === 'INACTIVE') {
+      return res.status(StatusCodes.CREATED).json(
         generalResponse(
-          StatusCodes.FORBIDDEN,
-          {},
+          StatusCodes.CREATED,
+          {
+            email: user.email,
+          },
           [],
-          'Invalid token or token missing',
+          'Complete google signup process',
         ),
       )
-  }
-
-  const {
-    data: googleInfo,
-  }: {
-    data: {
-      id: string
-      email: string
-      verified_email: boolean
-      name: string
-      given_name: string
-      family_name: string
-      picture: string
-      locale: string
     }
-  } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
 
-  const user = await userRepository.findOne({
-    where: { email: googleInfo.email },
-  })
+    if (user && user.id && user.status === 'ACTIVE') {
+      const { token: refresh_token, token_expires: refresh_token_expires } =
+        generateToken(user.id, 'refresh')
+      const { token: access_token, token_expires: access_token_expires } =
+        generateToken(user.id, 'access')
+      res.status(StatusCodes.OK).json(
+        generalResponse(
+          StatusCodes.OK,
+          {
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+            status: user.status,
+            refresh_token: refresh_token,
+            refresh_token_expires: refresh_token_expires,
+            access_token: access_token,
+            access_token_expires: access_token_expires,
+          },
+          [],
+          'User logged in successfully',
+        ),
+      )
+    }
 
-  if (user && !user.googleId) {
+    const randomNumber = Math.floor(Math.random() * (4 - 1 + 1)) + 1
+    const role = 'user'
+    const email = googleInfo.email
+    const first_name = googleInfo.given_name
+    const avatar = `https://robohash.org/${first_name}?set=${randomNumber}&size=500x500`
+    const last_name = googleInfo.family_name
+    const googleId = googleInfo.id
+
+    const newUser = userRepository.create({
+      avatar: avatar,
+      role: role,
+      email: email,
+      first_name: first_name,
+      last_name: last_name,
+      googleId: googleId,
+    })
+
+    await userRepository.save(newUser)
+
     return res
-      .status(StatusCodes.NOT_FOUND)
-      .json(generalResponse(StatusCodes.NOT_FOUND, {}, [], errorMessages.USER_NOT_FOUND_ERROR))
-  }
-
-  if (user && user.status === 'INACTIVE') {
-    return res.status(StatusCodes.CREATED).json(
-      generalResponse(
-        StatusCodes.CREATED,
-        {
-          email: user.email,
-        },
-        [],
-        'Complete google signup process',
-      ),
-    )
-  }
-
-  if (user && user.id && user.status === 'ACTIVE') {
-    const { token: refresh_token, token_expires: refresh_token_expires } =
-      generateToken(user.id, 'refresh')
-    const { token: access_token, token_expires: access_token_expires } =
-      generateToken(user.id, 'access')
-    res.status(StatusCodes.OK).json(
-      generalResponse(
-        StatusCodes.OK,
-        {
-          username: user.username,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
-          status: user.status,
-          refresh_token: refresh_token,
-          refresh_token_expires: refresh_token_expires,
-          access_token: access_token,
-          access_token_expires: access_token_expires,
-        },
-        [],
-        'User logged in successfully',
-      ),
-    )
-  }
-
-  const randomNumber = Math.floor(Math.random() * (4 - 1 + 1)) + 1
-  const role = 'user'
-  const email = googleInfo.email
-  const first_name = googleInfo.given_name
-  const avatar = `https://robohash.org/${first_name}?set=${randomNumber}&size=500x500`
-  const last_name = googleInfo.family_name
-  const googleId = googleInfo.id
-
-  const newUser = userRepository.create({
-    avatar: avatar,
-    role: role,
-    email: email,
-    first_name: first_name,
-    last_name: last_name,
-    googleId: googleId,
-  })
-
-  await userRepository.save(newUser)
-
-  return res
-    .status(StatusCodes.CREATED)
-    .json(
-      generalResponse(
-        StatusCodes.CREATED,
-        { email: googleInfo.email },
-        [],
-        `User signed up successfully, kindly complete profile`,
-      ),
-    )
-})
+      .status(StatusCodes.CREATED)
+      .json(
+        generalResponse(
+          StatusCodes.CREATED,
+          { email: googleInfo.email },
+          [],
+          `User signed up successfully, kindly complete profile`,
+        ),
+      )
+  },
+)
 
 export const completeGoogleSignupProfile = catchController(
   async (req: Request, res: Response) => {
@@ -155,7 +164,12 @@ export const completeGoogleSignupProfile = catchController(
       return res
         .status(StatusCodes.NOT_FOUND)
         .json(
-          generalResponse(StatusCodes.NOT_FOUND, {}, [], errorMessages.USER_NOT_FOUND_ERROR),
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            errorMessages.USER_NOT_FOUND_ERROR,
+          ),
         )
     }
 
@@ -176,7 +190,12 @@ export const completeGoogleSignupProfile = catchController(
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
-          generalResponse(StatusCodes.BAD_REQUEST, {}, [], errorMessages.USER_NOT_FOUND_ERROR),
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            errorMessages.USER_NOT_FOUND_ERROR,
+          ),
         )
     }
 
@@ -242,7 +261,7 @@ export const completeGoogleSignupProfile = catchController(
               refresh_token_expires: refresh_token_expires,
               access_token: access_token,
               access_token_expires: access_token_expires,
-              country_code: country_code
+              country_code: country_code,
             },
             [],
             'Your Email has been verified',
@@ -252,7 +271,14 @@ export const completeGoogleSignupProfile = catchController(
     } else {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json(generalResponse(StatusCodes.NOT_FOUND, {}, [], errorMessages.USER_NOT_FOUND_ERROR))
+        .json(
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            errorMessages.USER_NOT_FOUND_ERROR,
+          ),
+        )
     }
   },
 )

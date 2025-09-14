@@ -1,8 +1,10 @@
 extends baseEmail
 
 block content
-  p Hi #{name},
+  p Hi #{first_name},
   h2 Carus Recycling Email Verification
   p #{subject}
-  h4 Your OTP is - #{otp}
+  h4 Here is your One-time Password (OTP), it expires in 10minutes
+  h2 OTP - #{otp}
+  p Ignore this mail if you did not initiate the request.
   p - Carus Recycling

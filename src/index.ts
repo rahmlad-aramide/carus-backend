@@ -34,21 +34,14 @@ const start = async () => {
   app.use(passport.session())
   app.use(cookieParser())
   app.use(bodyParser.json())
-  // app.get('/', (req, res) => res.send('<a href="v1/auth/google"> CARUS RECYCLING</a>'))
-  // app.post('/', async (req, res) => {
-  //   try {
-  //     const loginResponse = await postBitgiftyLogin()
-  //     console.log('response lig:',loginResponse)
-  //   }catch(err){
-  //     console.log('login failed')
-  //   }
-  // })
+  app.get('/', (req, res) => res.send(`CARUS RECYCLING SERVER`))
+
   app.use('/v1', mainRoutes)
   app.use('/v1/admin', adminRoutes)
   app.set('view engine', 'pug')
   app.set('views', path.join(__dirname + '../views'))
   const server = app.listen(env.PORT, () => {
-    console.log(`Server is running at port: ${env.PORT}`)
+    console.log(`Server is running at: http://localhost:${env.PORT}`)
   })
 
   server.on('listening', () => {

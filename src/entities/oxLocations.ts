@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm'
 
-
 @Entity({ name: 'oxLocations' })
 export class oxLocations {
   @PrimaryGeneratedColumn('uuid')

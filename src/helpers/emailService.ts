@@ -38,6 +38,7 @@ export const sendVerificationOtp = async (
       to: email,
       html,
     }
+    // console.log('send verification code reached')
     ;(await transporter).sendMail(mailOptions)
   } catch (error) {
     console.error(error)
@@ -87,6 +88,32 @@ export const sendPasswordResetOtp = async (
       first_name,
       subject: 'Use this code to reset your password',
       otp,
+    })
+    const mailOptions = {
+      from: `CARUS RECYCLING <${process.env.EMAIL}>`,
+      subject: 'Password reset',
+      to: email,
+      html,
+    }
+    ;(await transporter).sendMail(mailOptions)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const sendPasswordResetToken = async (
+  first_name: string,
+  email: string,
+  token: string,
+) => {
+  const transporter: Promise<
+    nodemailer.Transporter<SMTPTransport.SentMessageInfo>
+  > = createTransporter()
+  try {
+    const html = pug.renderFile(path.join(emailPath, 'resetPassword.pug'), {
+      first_name,
+      subject: 'Use this code to reset your password',
+      link: `${process.env.FRONTEND_URL}/reset-password?token=${token}`,
     })
     const mailOptions = {
       from: `CARUS RECYCLING <${process.env.EMAIL}>`,
