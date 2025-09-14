@@ -181,7 +181,7 @@ export const completeGoogleSignupProfile = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'account has already been verified',
+            'Account has already been verified',
           ),
         )
     }
@@ -243,10 +243,15 @@ export const completeGoogleSignupProfile = catchController(
       user.country_code = country_code
       user.gender = gender
       if (user.role === 'user') {
-        const wallet = new Wallet()
-        wallet.user = user
-        wallet.updatedAt = new Date(Date.now())
-        await walletRepository.save(wallet)
+        const existingWallet = await walletRepository.findOne({
+          where: { user: { id: user.id } },
+        })
+        if (!existingWallet) {
+          const wallet = new Wallet()
+          wallet.user = user
+          wallet.updatedAt = new Date(Date.now())
+          await walletRepository.save(wallet)
+        }
         await userRepository.save(user)
         return res.status(StatusCodes.OK).json(
           generalResponse(

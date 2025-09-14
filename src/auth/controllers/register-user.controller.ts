@@ -283,10 +283,18 @@ export const verifyUserEmail = catchController(
             ),
           )
       }
-      const wallet = new Wallet()
-      wallet.user = user
-      wallet.updatedAt = new Date(Date.now())
-      await walletRepository.save(wallet)
+      // Find an existing wallet for the user
+      const existingWallet = await walletRepository.findOne({
+        where: { user: { id: user.id } },
+      })
+
+      // Only create a new wallet if one does not already exist
+      if (!existingWallet) {
+        const wallet = new Wallet()
+        wallet.user = user
+        wallet.updatedAt = new Date(Date.now())
+        await walletRepository.save(wallet)
+      }
       return res.status(StatusCodes.OK).json(
         generalResponse(
           StatusCodes.OK,

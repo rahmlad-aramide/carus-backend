@@ -1,15 +1,15 @@
 import * as Sentry from '@sentry/node'
 
+import env from './config/environment/index'
 Sentry.init({
   dsn: 'https://01c7dc98a8e0749f6e417433d1d60c9b@o4510017484881920.ingest.us.sentry.io/4510017487634432',
   // Setting this option to true will send default PII data to Sentry.
   // For example, automatic IP address collection on events
   sendDefaultPii: true,
-  environment: process.env.NODE_ENV,
+  environment: env.ENVIRONMENT,
   enableLogs: true,
 })
 
-// eslint-disable-next-line simple-import-sort/imports
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -19,12 +19,11 @@ import passport from 'passport'
 import path from 'path'
 import 'reflect-metadata'
 
-import env from './config/environment/index'
 import { AppDataSource } from './data-source'
 import mainRoutes from './routes'
 import adminRoutes from './routes/adminRoutes'
 
-const start = async () => {
+const startServer = async () => {
   const app: express.Application = express()
 
   AppDataSource.initialize()
@@ -35,7 +34,6 @@ const start = async () => {
       console.error('Error during Data Source Initialization', err)
     })
 
-  Sentry.setupExpressErrorHandler(app)
   app.use(cors())
   app.use(
     session({
@@ -48,10 +46,11 @@ const start = async () => {
   app.use(passport.session())
   app.use(cookieParser())
   app.use(bodyParser.json())
-  app.get('/', (req, res) => res.send(`CARUS RECYCLING SERVER`))
+  app.get('/', (_req, res) => res.send(`CARUS RECYCLING SERVER`))
   app.get('/debug-sentry', function mainHandler(_req, _res) {
-    throw new Error('My Sentry debug error!')
+    throw new Error("Test Sentry error! It's nothing to worry about!")
   })
+
   app.use('/v1', mainRoutes)
   app.use('/v1/admin', adminRoutes)
   app.set('view engine', 'pug')
@@ -59,6 +58,8 @@ const start = async () => {
   const server = app.listen(env.PORT, () => {
     console.log(`Server is running at: http://localhost:${env.PORT}`)
   })
+
+  Sentry.setupExpressErrorHandler(app)
 
   server.on('listening', () => {
     const used = process.memoryUsage()
@@ -69,4 +70,4 @@ const start = async () => {
   })
 }
 
-start()
+startServer()
