@@ -1,3 +1,5 @@
+// eslint-disable-next-line simple-import-sort/imports
+import '../instrument.js'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -6,12 +8,15 @@ import session from 'express-session'
 import passport from 'passport'
 import path from 'path'
 import 'reflect-metadata'
+// import * as Sentry from "@sentry/node"
 
 import env from './config/environment/index'
 import { AppDataSource } from './data-source'
 import mainRoutes from './routes'
 import adminRoutes from './routes/adminRoutes'
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Sentry = require('@sentry/node')
 const start = async () => {
   const app: express.Application = express()
 
@@ -22,6 +27,8 @@ const start = async () => {
     .catch((err) => {
       console.error('Error during Data Source Initialization', err)
     })
+
+  Sentry.setupExpressErrorHandler(app)
   app.use(cors())
   app.use(
     session({
@@ -35,7 +42,9 @@ const start = async () => {
   app.use(cookieParser())
   app.use(bodyParser.json())
   app.get('/', (req, res) => res.send(`CARUS RECYCLING SERVER`))
-
+  app.get('/debug-sentry', function mainHandler(_req, _res) {
+    throw new Error('My Sentry debug error!')
+  })
   app.use('/v1', mainRoutes)
   app.use('/v1/admin', adminRoutes)
   app.set('view engine', 'pug')

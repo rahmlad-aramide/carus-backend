@@ -20,7 +20,14 @@ export const loginUser = catchController(
     if (!identifier || !password) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json(generalResponse(StatusCodes.BAD_REQUEST, {}, [], ''))
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'Email and password is required',
+          ),
+        )
     }
 
     // const userService = new UserService();
