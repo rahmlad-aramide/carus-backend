@@ -1,5 +1,5 @@
+require('../instrument.ts')
 // eslint-disable-next-line simple-import-sort/imports
-import '../instrument.js'
 import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -8,7 +8,6 @@ import session from 'express-session'
 import passport from 'passport'
 import path from 'path'
 import 'reflect-metadata'
-// import * as Sentry from "@sentry/node"
 
 import env from './config/environment/index'
 import { AppDataSource } from './data-source'
