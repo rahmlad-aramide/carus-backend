@@ -1,10 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import {
-  generateEmailVerificationToken,
-  verifyEmailVerificationToken,
-} from 'src/helpers/generateToken'
 
 import { userRepository } from '../../auth/controllers'
 import { User, validateOtp } from '../../entities/user'
@@ -14,6 +10,10 @@ import {
   sendVerificationOtp,
 } from '../../helpers/emailService'
 import { errorMessages } from '../../helpers/error-messages'
+import {
+  generateEmailVerificationToken,
+  verifyEmailVerificationToken,
+} from '../../helpers/generateToken'
 import catchController from '../../utils/catchControllerAsyncs'
 
 export const resendOtp = catchController(
@@ -274,92 +274,92 @@ export const changePassword = catchController(
   },
 )
 
-export const changePassword1 = catchController(
-  async (req: Request, res: Response) => {
-    const {
-      otp,
-      email,
-      newPassword,
-    }: { otp: string; email: string; newPassword: string } = req.body
+// export const changePassword1 = catchController(
+//   async (req: Request, res: Response) => {
+//     const {
+//       otp,
+//       email,
+//       newPassword,
+//     }: { otp: string; email: string; newPassword: string } = req.body
 
-    //Check if required parameters are passed
-    if (!otp || !email || !newPassword) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            {},
-            [],
-            errorMessages.PASS_REQUIRED_FIELDS_ERROR,
-          ),
-        )
-    }
+//     //Check if required parameters are passed
+//     if (!otp || !email || !newPassword) {
+//       return res
+//         .status(StatusCodes.BAD_REQUEST)
+//         .json(
+//           generalResponse(
+//             StatusCodes.BAD_REQUEST,
+//             {},
+//             [],
+//             errorMessages.PASS_REQUIRED_FIELDS_ERROR,
+//           ),
+//         )
+//     }
 
-    const user = await userRepository.findOneBy({ email })
+//     const user = await userRepository.findOneBy({ email })
 
-    if (!user) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json(
-          generalResponse(
-            StatusCodes.NOT_FOUND,
-            {},
-            [],
-            errorMessages.USER_NOT_FOUND_ERROR,
-          ),
-        )
-    }
+//     if (!user) {
+//       return res
+//         .status(StatusCodes.NOT_FOUND)
+//         .json(
+//           generalResponse(
+//             StatusCodes.NOT_FOUND,
+//             {},
+//             [],
+//             errorMessages.USER_NOT_FOUND_ERROR,
+//           ),
+//         )
+//     }
 
-    const passwordRegex =
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+,-./:;<=>?@[\\\]^_`{|}~])(?=.{8,})/
-    if (!newPassword.match(passwordRegex)) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            {},
-            [],
-            errorMessages.PASSWORD_REGEX_ERROR,
-          ),
-        )
-    }
+//     const passwordRegex =
+//       /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+,-./:;<=>?@[\\\]^_`{|}~])(?=.{8,})/
+//     if (!newPassword.match(passwordRegex)) {
+//       return res
+//         .status(StatusCodes.BAD_REQUEST)
+//         .json(
+//           generalResponse(
+//             StatusCodes.BAD_REQUEST,
+//             {},
+//             [],
+//             errorMessages.PASSWORD_REGEX_ERROR,
+//           ),
+//         )
+//     }
 
-    //verify otp
-    if (!validateOtp(user, otp)) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            {},
-            [],
-            'OTP is incorrect or has expired',
-          ),
-        )
-    }
+//     //verify otp
+//     if (!validateOtp(user, otp)) {
+//       return res
+//         .status(StatusCodes.BAD_REQUEST)
+//         .json(
+//           generalResponse(
+//             StatusCodes.BAD_REQUEST,
+//             {},
+//             [],
+//             'OTP is incorrect or has expired',
+//           ),
+//         )
+//     }
 
-    if (user.password) {
-      const isOldPassword = await bcrypt.compare(newPassword, user.password)
-      if (isOldPassword) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json(
-            generalResponse(
-              StatusCodes.BAD_REQUEST,
-              {},
-              [],
-              'New password cannot be the same as old password',
-            ),
-          )
-      }
-    }
+//     if (user.password) {
+//       const isOldPassword = await bcrypt.compare(newPassword, user.password)
+//       if (isOldPassword) {
+//         return res
+//           .status(StatusCodes.BAD_REQUEST)
+//           .json(
+//             generalResponse(
+//               StatusCodes.BAD_REQUEST,
+//               {},
+//               [],
+//               'New password cannot be the same as old password',
+//             ),
+//           )
+//       }
+//     }
 
-    user.password = await bcrypt.hash(newPassword, 10)
-    await userRepository.save(user)
-    res
-      .status(StatusCodes.OK)
-      .json(generalResponse(StatusCodes.OK, {}, [], 'Password has been reset'))
-  },
-)
+//     user.password = await bcrypt.hash(newPassword, 10)
+//     await userRepository.save(user)
+//     res
+//       .status(StatusCodes.OK)
+//       .json(generalResponse(StatusCodes.OK, {}, [], 'Password has been reset'))
+//   },
+// )

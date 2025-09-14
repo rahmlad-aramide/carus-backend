@@ -4,7 +4,7 @@ import { UserRow } from 'src/@types/user'
 const EMAIL_VERIFICATION_EXPIRY = '10m' // 10 minutes
 const EMAIL_VERIFICATION_SECRET = process.env.JWT_SECRET as string
 
-export function generateEmailVerificationToken(
+export const generateEmailVerificationToken = function (
   email: string,
   otp: string,
 ): string {
@@ -13,7 +13,7 @@ export function generateEmailVerificationToken(
   })
 }
 
-export function verifyEmailVerificationToken(token: string): {
+export const verifyEmailVerificationToken = function (token: string): {
   email: string
   otp: string
 } {
