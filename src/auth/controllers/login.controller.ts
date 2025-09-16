@@ -15,7 +15,6 @@ export const loginUser = catchController(
   async (req: Request, res: Response) => {
     const { identifier, password }: { identifier: string; password: string } =
       req.body
-    console.log('🚀 ~ identifier, password:', identifier, password)
 
     //Check if both fields are passed
     if (!identifier || !password) {
@@ -51,7 +50,6 @@ export const loginUser = catchController(
     const emailUser = await userRepository.findOne({
       where: { email: identifier },
     })
-    console.log('🚀 ~ emailUser:', emailUser)
 
     // const phoneUser =
 
@@ -60,7 +58,6 @@ export const loginUser = catchController(
       : await userRepository.findOne({
           where: { phone: normalizePhoneNumber(identifier) },
         })
-    console.log('🚀 ~ user:', user)
 
     //check if user is an admin
     if (user?.role !== 'user') {
@@ -89,7 +86,6 @@ export const loginUser = catchController(
         )
     }
 
-    console.log('🚀 ~ typeof user.password:', typeof user.password)
     //Check if the password is a valid string and not undefined or null
     if (!user.password || typeof user.password !== 'string') {
       return res
@@ -128,7 +124,6 @@ export const loginUser = catchController(
 
     //Compare the client's password with the one in the db
     const isPasswordValid = await bcrypt.compare(password, user.password)
-    console.log('🚀 ~ isPasswordValid:', isPasswordValid)
     if (!isPasswordValid) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
@@ -167,7 +162,7 @@ export const loginUser = catchController(
       )
     } else {
       console.log(
-        '🚀 ~ Final else response after performing passwordValid and user.id check:',
+        '🚀 ~ Final error after passwordValid and user.id check:',
         res,
       )
       return res
