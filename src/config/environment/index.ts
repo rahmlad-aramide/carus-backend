@@ -18,6 +18,10 @@ const env = {
   // },
   DB_USERNAME: process.env.DB_USERNAME,
   SESSION_SECRET: process.env.SESSION_SECRET as string,
+  REDIS_USERNAME: process.env.REDIS_USERNAME,
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT,
 }
 
 export default env

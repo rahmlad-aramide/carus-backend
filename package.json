@@ -71,10 +71,8 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.11.0",
     "pug": "^3.0.2",
+    "redis": "^4.7.1",
     "reflect-metadata": "^0.1.13",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui": "^5.26.2",
-    "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.16",
     "typescript": "^5.0.4"
   },
