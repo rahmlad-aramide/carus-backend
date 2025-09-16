@@ -14,4 +14,7 @@ export const AppDataSource = new DataSource({
   migrations: [path.join(__dirname + '/migrations/*.{js,ts}')],
   synchronize: true,
   poolSize: 10,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 })

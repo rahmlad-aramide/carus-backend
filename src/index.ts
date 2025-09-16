@@ -32,6 +32,7 @@ const startServer = async () => {
     })
     .catch((err) => {
       console.error('Error during Data Source Initialization', err)
+      throw err
     })
 
   app.use(cors())
