@@ -23,6 +23,12 @@ export enum CategoryEnum {
 
 export enum MaterialEnum {
   PLASTIC = 'plastic',
+  PAPER = 'paper',
+  E_WASTE = 'e-waste',
+  ORGANIC = 'organic',
+  METAL = 'metal',
+  GLASS = 'glass',
+  MIXED_WASTE = 'mixed-waste',
 }
 
 export const isWeekend = (date: Date): boolean => {

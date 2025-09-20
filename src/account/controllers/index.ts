@@ -125,7 +125,7 @@ export const editProfile = catchController(
               StatusCodes.BAD_REQUEST,
               {},
               [],
-              'username cannot be empty',
+              'Username cannot be empty',
             ),
           )
       }
@@ -160,7 +160,7 @@ export const editProfile = catchController(
               StatusCodes.BAD_REQUEST,
               {},
               [],
-              'first name cannot be empty',
+              'First name cannot be empty',
             ),
           )
       }
@@ -190,35 +190,16 @@ export const editProfile = catchController(
               StatusCodes.BAD_REQUEST,
               {},
               [],
-              'last name cannot be empty',
+              'Last name cannot be empty',
             ),
           )
       }
 
       user.last_name = req.body.last_name
     }
-
-    if (req.body.phone) {
-      const existingPhone = await userRepository.findOne({
-        where: {
-          phone: req.body.phone,
-        },
-      })
-      if (existingPhone) {
-        return res
-          .status(StatusCodes.CONFLICT)
-          .json(
-            generalResponse(
-              StatusCodes.CONFLICT,
-              {},
-              [],
-              'This phone number is already linked to another account',
-            ),
-          )
-      }
-
-      const phoneRegex = /^[0-9]{10}$/
-      if (!req.body.phone.match(phoneRegex)) {
+    // Check if the phone number is provided and not an empty string.
+    if (req.body.phone !== undefined) {
+      if (req.body.phone === '') {
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -226,25 +207,50 @@ export const editProfile = catchController(
               StatusCodes.BAD_REQUEST,
               {},
               [],
-              'Please enter a valid phone number',
+              'Phone number cannot be empty',
             ),
           )
       }
 
-      if (user.phone != req.body.phone && req.body.phone === '') {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json(
-            generalResponse(
-              StatusCodes.BAD_REQUEST,
-              {},
-              [],
-              'phone number cannot be empty',
-            ),
-          )
-      }
+      // Check if the phone number is different from the current user's.
+      if (req.body.phone !== user.phone) {
+        // Validate the new phone number against the regex.
+        const phoneRegex = /^[0-9]{10}$/
+        if (!req.body.phone.match(phoneRegex)) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json(
+              generalResponse(
+                StatusCodes.BAD_REQUEST,
+                {},
+                [],
+                'Please enter a valid phone number',
+              ),
+            )
+        }
 
-      user.phone = req.body.phone
+        // Check for conflicts with other accounts.
+        const existingPhone = await userRepository.findOne({
+          where: {
+            phone: req.body.phone,
+          },
+        })
+        if (existingPhone) {
+          return res
+            .status(StatusCodes.CONFLICT)
+            .json(
+              generalResponse(
+                StatusCodes.CONFLICT,
+                {},
+                [],
+                'This phone number is already linked to another account',
+              ),
+            )
+        }
+
+        // If all checks pass, update the user's phone.
+        user.phone = req.body.phone
+      }
     }
 
     if (req.body.address && req.body.address.length < 5) {

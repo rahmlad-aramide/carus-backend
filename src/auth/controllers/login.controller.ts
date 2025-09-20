@@ -272,7 +272,7 @@ export const getAccessToken = catchController(
       return res
         .status(StatusCodes.NOT_ACCEPTABLE)
         .json(
-          generalResponse(StatusCodes.NOT_ACCEPTABLE, {}, [], 'invalid token'),
+          generalResponse(StatusCodes.NOT_ACCEPTABLE, {}, [], 'Invalid token'),
         )
     }
   },

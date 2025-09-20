@@ -17,6 +17,6 @@ export const generalResponse = (
 
 export const returnSuccess = 'Operation was successful'
 export const emailVerificationSuccess = 'Your email has been verified'
-export const invalidCredentials = 'invalid credentials'
+export const invalidCredentials = 'Invalid credentials'
 export const userNotFound = 'User not found'
-export const invalidTransaction = 'invalid transaction'
+export const invalidTransaction = 'Invalid transaction'

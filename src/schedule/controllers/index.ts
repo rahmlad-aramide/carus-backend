@@ -52,7 +52,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
           StatusCodes.BAD_REQUEST,
           {},
           [],
-          `Invalid material, material list include: [${MaterialEnum.PLASTIC}]`,
+          `Invalid material. The accepted materials are: [${Object.values(
+            MaterialEnum,
+          ).join(', ')}]`,
         ),
       )
   }
@@ -66,7 +68,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
           StatusCodes.BAD_REQUEST,
           {},
           [],
-          'material must be between 50 and 10,000',
+          'Material must be between 50 and 10,000',
         ),
       )
   }
@@ -80,7 +82,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
           StatusCodes.BAD_REQUEST,
           {},
           [],
-          'container must be between 1 and 50',
+          'Container must be between 1 and 50',
         ),
       )
   }
@@ -129,7 +131,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
           StatusCodes.BAD_REQUEST,
           {},
           [],
-          'the indicated date has elapsed',
+          'The indicated date has elapsed',
         ),
       )
   }
@@ -141,7 +143,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
   if (!wallet) {
     return res
       .status(StatusCodes.NOT_FOUND)
-      .json(generalResponse(StatusCodes.NOT_FOUND, {}, [], 'wallet not found'))
+      .json(generalResponse(StatusCodes.NOT_FOUND, {}, [], 'Wallet not found'))
   }
 
   const newSchedule = scheduleRepository.create({
@@ -165,7 +167,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
         StatusCodes.OK,
         {},
         [],
-        `pickup scheduled, see you on ${date.toDateString()}`,
+        `Pickup scheduled, see you on ${date.toDateString()}`,
       ),
     )
 })

@@ -11,6 +11,7 @@ Sentry.init({
 })
 
 import bodyParser from 'body-parser'
+import { RedisStore } from 'connect-redis'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
@@ -47,14 +48,19 @@ const startServer = async () => {
       throw err
     })
 
+  //TODO: Configure cors and encrypt password in transit
   app.use(cors())
   app.use(
     session({
+      store: new RedisStore({
+        client: redisClient,
+      }),
       secret: env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
     }),
   )
+
   app.use(passport.initialize())
   app.use(passport.session())
   app.use(cookieParser())
