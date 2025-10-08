@@ -2,7 +2,12 @@ import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { User } from 'src/entities/user'
 
-import { CategoryEnum, MaterialEnum, ScheduleRow } from '../../@types/schedule'
+import {
+  CategoryEnum,
+  MaterialEnum,
+  ScheduleRow,
+  ScheduleStatusEnum,
+} from '../../@types/schedule'
 import { AppDataSource } from '../../data-source'
 import { Schedule } from '../../entities/schedule'
 import { Wallet } from '../../entities/wallet'
@@ -17,10 +22,17 @@ const passRequredFieldsMessage =
   'Please make sure you pass all the required fields'
 const scheduleRepository = AppDataSource.getRepository(Schedule)
 const walletRepository = AppDataSource.getRepository(Wallet)
+const statusList = Object.values(ScheduleStatusEnum).join(', ')
 
 const schedulePickup = catchController(async (req: Request, res: Response) => {
-  const { material, material_amount, container_amount, address } =
-    req.body as ScheduleRow
+  const {
+    material,
+    material_amount,
+    container_amount,
+    address,
+    status = 'pending',
+    category,
+  } = req.body as ScheduleRow
 
   //Check if all fields are passed
   const requiredFields = [
@@ -54,6 +66,22 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
           [],
           `Invalid material. The accepted materials are: [${Object.values(
             MaterialEnum,
+          ).join(', ')}]`,
+        ),
+      )
+  }
+
+  //validate the category
+  if (category && !Object.values(CategoryEnum).includes(category)) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json(
+        generalResponse(
+          StatusCodes.BAD_REQUEST,
+          {},
+          [],
+          `Invalid category. The accepted categories are: [${Object.values(
+            CategoryEnum,
           ).join(', ')}]`,
         ),
       )
@@ -106,18 +134,18 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
     },
   })
 
-  // if (!address) {
-  //   return res
-  //     .status(StatusCodes.BAD_REQUEST)
-  //     .json(
-  //       generalResponse(
-  //         StatusCodes.BAD_REQUEST,
-  //         {},
-  //         [],
-  //         'Input a valid address',
-  //       ),
-  //     )
-  // }
+  if (!address) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json(
+        generalResponse(
+          StatusCodes.BAD_REQUEST,
+          {},
+          [],
+          'Input a valid address',
+        ),
+      )
+  }
 
   // const lga = user.city
 
@@ -138,8 +166,6 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
 
   const date = dateString
 
-  const status = 'pending'
-
   if (!wallet) {
     return res
       .status(StatusCodes.NOT_FOUND)
@@ -148,7 +174,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
 
   const newSchedule = scheduleRepository.create({
     address: address,
-    category: CategoryEnum.PICKUP,
+    category: category,
     date: date,
     container_amount: container_amount,
     material: material,
@@ -171,6 +197,117 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
       ),
     )
 })
+
+const updatePickupSchedule = catchController(
+  async (req: Request, res: Response) => {
+    const user: User | undefined = req.user
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
+    }
+
+    const { status: newScheduleStatus } = req.body as ScheduleRow
+    const scheduleId = String(req.params.id)
+
+    if (!scheduleId) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'Schedule id not specified',
+          ),
+        )
+    }
+
+    if (!newScheduleStatus) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'New schedule status not specified',
+          ),
+        )
+    }
+
+    if (
+      newScheduleStatus &&
+      !Object.values(ScheduleStatusEnum).includes(newScheduleStatus)
+    ) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            `Invalid schedule status, valid statuses are: ${statusList}`,
+          ),
+        )
+    }
+
+    const schedules = await scheduleRepository.find({
+      relations: {
+        user: true,
+        transaction: true,
+      },
+      where: {
+        user: {
+          id: user.id,
+        },
+      },
+    })
+
+    const schedule = schedules.find(
+      (matchedSchedule) => matchedSchedule.id === scheduleId,
+    )
+
+    if (!schedule) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            `Schedule with the id ${scheduleId} does not exist'`,
+          ),
+        )
+    }
+
+    schedule.status = newScheduleStatus
+    schedule.date = new Date(Date.now())
+
+    await scheduleRepository.save(schedule)
+    return res.status(StatusCodes.OK).json(
+      generalResponse(
+        StatusCodes.OK,
+        {
+          id: schedule.id,
+          address: schedule.address,
+          amount: schedule.amount,
+          category: schedule.category,
+          container_amount: schedule.container_amount,
+          date: schedule.date,
+          material: schedule.material,
+          material_amount: schedule.material_amount,
+          schedule_date: schedule.schedule_date,
+          status: schedule.status,
+          transaction_id: schedule.transaction?.id,
+        },
+        [],
+        returnSuccess,
+      ),
+    )
+  },
+)
 
 const getSchedules = catchController(async (req: Request, res: Response) => {
   const user: User | undefined = req.user
@@ -227,7 +364,6 @@ const getScheduleById = catchController(async (req: Request, res: Response) => {
 
   const schedules = await scheduleRepository.find({
     relations: {
-      user: true,
       transaction: true,
     },
     where: {
@@ -276,4 +412,57 @@ const getScheduleById = catchController(async (req: Request, res: Response) => {
   )
 })
 
-export { getScheduleById, getSchedules, schedulePickup }
+const deleteScheduleById = catchController(
+  async (req: Request, res: Response) => {
+    const user: User | undefined = req.user
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
+    }
+
+    const scheduleId = String(req.params.id)
+
+    const schedule = await scheduleRepository.findOne({
+      where: {
+        id: scheduleId,
+        user: { id: user.id },
+      },
+    })
+
+    if (!schedule) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            'Schedule with this id does not exist',
+          ),
+        )
+    }
+
+    await scheduleRepository.remove(schedule)
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        generalResponse(
+          StatusCodes.OK,
+          {},
+          [],
+          'Schedule deleted successfully',
+        ),
+      )
+  },
+)
+
+export {
+  deleteScheduleById,
+  getScheduleById,
+  getSchedules,
+  schedulePickup,
+  updatePickupSchedule,
+}

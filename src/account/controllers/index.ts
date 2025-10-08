@@ -274,7 +274,7 @@ export const editProfile = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'address cannot be empty',
+            'Address cannot be empty',
           ),
         )
     }
@@ -305,7 +305,7 @@ export const editProfile = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'region cannot be empty',
+            'Region cannot be empty',
           ),
         )
     }
@@ -333,7 +333,7 @@ export const editProfile = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'city number cannot be empty',
+            'City number cannot be empty',
           ),
         )
     }

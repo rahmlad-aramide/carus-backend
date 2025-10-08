@@ -9,7 +9,7 @@ export interface ScheduleRow {
   address: string
   lga: CityEnum
   date: Date
-  status: string
+  status: ScheduleStatusEnum
   scheduleDate: Date
   oxAddress?: string
   country_code?: string
@@ -29,6 +29,12 @@ export enum MaterialEnum {
   METAL = 'metal',
   GLASS = 'glass',
   MIXED_WASTE = 'mixed-waste',
+}
+
+export enum ScheduleStatusEnum {
+  PENDING = 'pending',
+  MISSED = 'missed',
+  COMPLETED = 'completed',
 }
 
 export const isWeekend = (date: Date): boolean => {
