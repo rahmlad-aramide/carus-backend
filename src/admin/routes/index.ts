@@ -8,6 +8,7 @@ import {
   getAllSchedules,
   getTotalWalletAmount,
   loginAdmin,
+  getDonations,
 } from '../controllers'
 import verifyAdmin from '../../helpers/verifyAdmin'
 
@@ -20,5 +21,6 @@ router.post('/schedule/fulfill/:id', verifyAdmin, fulfillSchedule)
 router.get('/schedules', verifyAdmin, getAllSchedules)
 router.get('/accounts', verifyAdmin, getAllAccounts)
 router.get('/total-wallet-amount', verifyAdmin, getTotalWalletAmount)
+router.get('/donations', verifyAdmin, getDonations)
 
 export default router

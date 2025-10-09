@@ -8,6 +8,7 @@ import { Schedule } from '../../entities/schedule'
 import { Transaction } from '../../entities/transactions'
 import { User } from '../../entities/user'
 import { Wallet } from '../../entities/wallet'
+import { Donation } from '../../entities/donation'
 import {
   generalResponse,
   invalidCredentials,
@@ -523,6 +524,8 @@ export const getAllSchedules = catchController(
     )
   },
 )
+
+export * from './donationController'
 
 export const getAllAccounts = catchController(
   async (req: Request, res: Response) => {
