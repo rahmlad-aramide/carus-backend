@@ -6,12 +6,14 @@ import authRoutes from '../auth/routes'
 import configurationRoutes from '../configurations/routes'
 import contactRoutes from '../contact/routes'
 import donationRoutes from '../donation/routes'
+import redemptionRoutes from '../redemption/routes'
 import scheduleRoutes from '../schedule/routes'
 import transactionRoutes from '../transactions/routes'
 import walletRoutes from '../wallet/routes'
 
 const router = Router()
 
+router.use('/redeem', redemptionRoutes)
 router.use('/donation', donationRoutes)
 router.use('/account', accountRoutes)
 router.use('/auth', authRoutes)

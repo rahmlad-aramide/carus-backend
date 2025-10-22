@@ -31,15 +31,14 @@ export const createCampaign = catchController(
   async (req: Request, res: Response) => {
     const { error } = createCampaignSchema.validate(req.body)
     if (error) {
-      const details = error.details.map((d) => d.message)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
             error.message,
-            details,
-            details.join('; '),
+            [],
+            error.details,
           ),
         )
     }
@@ -67,17 +66,15 @@ export const updateCampaign = catchController(
   async (req: Request, res: Response) => {
     const { id } = req.params
     const { error } = updateCampaignSchema.validate(req.body)
-    console.log('🚀 ~ error:', error)
     if (error) {
-      const details = error.details.map((d) => d.message)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
-            {},
-            details,
-            details.join('; '),
+            error.message,
+            [],
+            error.details,
           ),
         )
     }
@@ -113,7 +110,7 @@ export const deleteCampaign = catchController(
     await donationRepository.remove(campaign)
     res
       .status(StatusCodes.OK)
-      .json(generalResponse(StatusCodes.OK, {}, [], returnSuccess))
+      .json(generalResponse(StatusCodes.OK, null, [], returnSuccess))
   },
 )
 

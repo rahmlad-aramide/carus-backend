@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
+import Joi from 'joi'
 
 import { CityEnum, RegionEnum } from '../../@types/user'
 import { AppDataSource } from '../../data-source'
@@ -8,6 +9,10 @@ import { generalResponse, returnSuccess } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
 
 const configurationRepository = AppDataSource.getRepository(Configurations)
+
+const updatePointToNairaSchema = Joi.object({
+  value: Joi.number().positive().required(),
+})
 
 export const createConfiguration = catchController(
   async (req: Request, res: Response) => {
@@ -84,5 +89,44 @@ export const getLocationDetails = catchController(
         returnSuccess,
       ),
     )
+  },
+)
+
+export const updatePointToNaira = catchController(
+  async (req: Request, res: Response) => {
+    const { error } = updatePointToNairaSchema.validate(req.body)
+    if (error) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            error.message,
+            [],
+            error.details,
+          ),
+        )
+    }
+
+    const { value } = req.body
+
+    let pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+
+    if (pointToNaira) {
+      pointToNaira.value = value
+    } else {
+      pointToNaira = configurationRepository.create({
+        type: 'point_to_naira',
+        value: value,
+      })
+    }
+
+    await configurationRepository.save(pointToNaira)
+
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, pointToNaira, [], returnSuccess))
   },
 )
