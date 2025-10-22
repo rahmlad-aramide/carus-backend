@@ -1,18 +1,14 @@
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import Joi from 'joi'
 
 import { CityEnum, RegionEnum } from '../../@types/user'
 import { AppDataSource } from '../../data-source'
 import { Configurations } from '../../entities/configurations'
 import { generalResponse, returnSuccess } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
+import { updateConfigurationSchema } from '../../utils/validators/configuration'
 
 const configurationRepository = AppDataSource.getRepository(Configurations)
-
-const updatePointToNairaSchema = Joi.object({
-  value: Joi.number().positive().required(),
-})
 
 export const createConfiguration = catchController(
   async (req: Request, res: Response) => {
@@ -92,9 +88,10 @@ export const getLocationDetails = catchController(
   },
 )
 
-export const updatePointToNaira = catchController(
+export const updateConfiguration = catchController(
   async (req: Request, res: Response) => {
-    const { error } = updatePointToNairaSchema.validate(req.body)
+    const { type } = req.params
+    const { error } = updateConfigurationSchema.validate(req.body)
     if (error) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -110,20 +107,32 @@ export const updatePointToNaira = catchController(
 
     const { value } = req.body
 
-    let pointToNaira = await configurationRepository.findOne({
-      where: { type: 'point_to_naira' },
+    let configuration = await configurationRepository.findOne({
+      where: { type },
     })
 
-    if (pointToNaira) {
-      pointToNaira.value = value
+    if (configuration) {
+      configuration.value = value
     } else {
-      pointToNaira = configurationRepository.create({
-        type: 'point_to_naira',
+      configuration = configurationRepository.create({
+        type: type,
         value: value,
       })
     }
 
-    await configurationRepository.save(pointToNaira)
+    await configurationRepository.save(configuration)
+
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, configuration, [], returnSuccess))
+  },
+)
+
+export const getPointToNaira = catchController(
+  async (req: Request, res: Response) => {
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
 
     res
       .status(StatusCodes.OK)
