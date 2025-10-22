@@ -31,14 +31,15 @@ export const createCampaign = catchController(
   async (req: Request, res: Response) => {
     const { error } = createCampaignSchema.validate(req.body)
     if (error) {
+      const details = error.details.map((d) => d.message)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
             error.message,
-            [],
-            error.details,
+            details,
+            details.join('; '),
           ),
         )
     }
@@ -66,15 +67,17 @@ export const updateCampaign = catchController(
   async (req: Request, res: Response) => {
     const { id } = req.params
     const { error } = updateCampaignSchema.validate(req.body)
+    console.log('🚀 ~ error:', error)
     if (error) {
+      const details = error.details.map((d) => d.message)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
-            error.message,
-            [],
-            error.details,
+            {},
+            details,
+            details.join('; '),
           ),
         )
     }
@@ -103,14 +106,14 @@ export const deleteCampaign = catchController(
     const campaign = await donationRepository.findOne({ where: { id } })
     if (!campaign) {
       return res
-        .status(StatusCodes.NOT_found)
+        .status(StatusCodes.NOT_FOUND)
         .json(generalResponse(StatusCodes.NOT_FOUND, '', [], donationNotFound))
     }
 
     await donationRepository.remove(campaign)
     res
       .status(StatusCodes.OK)
-      .json(generalResponse(StatusCodes.OK, null, [], returnSuccess))
+      .json(generalResponse(StatusCodes.OK, {}, [], returnSuccess))
   },
 )
 
