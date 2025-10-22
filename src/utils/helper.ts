@@ -23,3 +23,10 @@ export const getUptime = () => {
 
   return uptimeString
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function formatJoiError(error: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const details: string[] = (error?.details || []).map((d: any) => d.message)
+  return { details, message: details.join('; ') }
+}
