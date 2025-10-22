@@ -13,11 +13,28 @@ import {
   getDonation,
   getDonations,
 } from '../controllers/adminDonationController'
+import {
+  createAdmin,
+  assignAdmin,
+  removeAdmin,
+  adminForgotPassword,
+  adminResetPassword,
+} from '../controllers/adminManagementController'
 import verifyAdmin from '../../helpers/verifyAdmin'
 
 const router = Router()
 
 router.post('/login', loginAdmin)
+
+// Admin Management Routes
+router.post('/create-admin', verifyAdmin, createAdmin)
+router.patch('/assign-admin/:id', verifyAdmin, assignAdmin)
+router.patch('/remove-admin/:id', verifyAdmin, removeAdmin)
+
+// Password Reset Routes
+router.post('/forgot-password', adminForgotPassword)
+router.post('/reset-password/:token', adminResetPassword)
+
 router.put('/schedule/accept/:id', verifyAdmin, acceptSchedule)
 router.put('/schedule/cancel/:id', verifyAdmin, cancelSchedule)
 router.post('/schedule/fulfill/:id', verifyAdmin, fulfillSchedule)
