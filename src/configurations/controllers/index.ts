@@ -6,6 +6,7 @@ import { AppDataSource } from '../../data-source'
 import { Configurations } from '../../entities/configurations'
 import { generalResponse, returnSuccess } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
+import { updateConfigurationSchema } from '../../utils/validators/configuration'
 
 const configurationRepository = AppDataSource.getRepository(Configurations)
 
@@ -84,5 +85,57 @@ export const getLocationDetails = catchController(
         returnSuccess,
       ),
     )
+  },
+)
+
+export const updateConfiguration = catchController(
+  async (req: Request, res: Response) => {
+    const { type } = req.params
+    const { error } = updateConfigurationSchema.validate(req.body)
+    if (error) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            error.message,
+            [],
+            error.details,
+          ),
+        )
+    }
+
+    const { value } = req.body
+
+    let configuration = await configurationRepository.findOne({
+      where: { type },
+    })
+
+    if (configuration) {
+      configuration.value = value
+    } else {
+      configuration = configurationRepository.create({
+        type: type,
+        value: value,
+      })
+    }
+
+    await configurationRepository.save(configuration)
+
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, configuration, [], returnSuccess))
+  },
+)
+
+export const getPointToNaira = catchController(
+  async (req: Request, res: Response) => {
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, pointToNaira, [], returnSuccess))
   },
 )

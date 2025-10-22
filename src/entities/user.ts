@@ -21,6 +21,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm'
 
+import { Contribution } from './contribution'
+import { Redemption } from './redemption'
 import { Schedule } from './schedule'
 import { Transaction } from './transactions'
 import { Wallet } from './wallet'
@@ -118,6 +120,12 @@ export class User {
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions?: Transaction[]
+
+  @OneToMany(() => Contribution, (contribution) => contribution.user)
+  contributions?: Contribution[]
+
+  @OneToMany(() => Redemption, (redemption) => redemption.user)
+  redemptions?: Redemption[]
 
   static generateOTP(): string {
     const otpLength = 6

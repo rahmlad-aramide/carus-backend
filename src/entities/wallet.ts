@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm'
 
+import { Contribution } from './contribution'
 import { Transaction } from './transactions'
 import { User } from './user'
 
@@ -31,4 +32,8 @@ export class Wallet {
   @OneToMany(() => Transaction, (transaction) => transaction.wallet)
   @JoinColumn()
   transactions?: Transaction[]
+
+  @OneToMany(() => Contribution, (contribution) => contribution.wallet)
+  @JoinColumn()
+  contributions?: Contribution[]
 }

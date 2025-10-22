@@ -8,8 +8,11 @@ import {
   getAllSchedules,
   getTotalWalletAmount,
   loginAdmin,
-  getDonations,
 } from '../controllers'
+import {
+  getDonation,
+  getDonations,
+} from '../controllers/adminDonationController'
 import verifyAdmin from '../../helpers/verifyAdmin'
 
 const router = Router()
@@ -22,5 +25,6 @@ router.get('/schedules', verifyAdmin, getAllSchedules)
 router.get('/accounts', verifyAdmin, getAllAccounts)
 router.get('/total-wallet-amount', verifyAdmin, getTotalWalletAmount)
 router.get('/donations', verifyAdmin, getDonations)
+router.get('/donations/:id', verifyAdmin, getDonation)
 
 export default router

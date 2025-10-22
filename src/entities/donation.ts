@@ -2,9 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
+
+import { Contribution } from './contribution'
 
 @Entity({ name: 'donations' })
 export class Donation {
@@ -37,4 +40,7 @@ export class Donation {
 
   @UpdateDateColumn()
   updatedAt?: Date
+
+  @OneToMany(() => Contribution, (contribution) => contribution.donation)
+  contributions?: Contribution[]
 }

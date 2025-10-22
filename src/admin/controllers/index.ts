@@ -8,7 +8,6 @@ import { Schedule } from '../../entities/schedule'
 import { Transaction } from '../../entities/transactions'
 import { User } from '../../entities/user'
 import { Wallet } from '../../entities/wallet'
-import { Donation } from '../../entities/donation'
 import {
   generalResponse,
   invalidCredentials,
