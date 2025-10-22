@@ -21,6 +21,8 @@ router.get(campaignIdPath, verifyToken, getCampaign)
 router.post('/contribute', verifyToken, createContribution)
 
 // Admin routes
+router.get(campaignPath, verifyAdmin, getCampaigns)
+router.get(campaignIdPath, verifyAdmin, getCampaign)
 router.post(campaignPath, verifyAdmin, createCampaign)
 router.put(campaignIdPath, verifyAdmin, updateCampaign)
 router.delete(campaignIdPath, verifyAdmin, deleteCampaign)

@@ -27,14 +27,15 @@ export const createContribution = catchController(
 
     const { error } = createContributionSchema.validate(req.body)
     if (error) {
+      const details = error.details.map((d) => d.message)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
-            error.message,
-            [],
-            error.details,
+            {},
+            details,
+            details.join('; '),
           ),
         )
     }

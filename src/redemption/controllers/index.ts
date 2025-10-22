@@ -1,10 +1,10 @@
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import { Configurations } from 'src/entities/configurations'
-import { User } from 'src/entities/user'
 
 import { AppDataSource } from '../../data-source'
+import { Configurations } from '../../entities/configurations'
 import { Redemption, RedemptionType } from '../../entities/redemption'
+import { User } from '../../entities/user'
 import { Wallet } from '../../entities/wallet'
 import {
   generalResponse,
@@ -14,6 +14,7 @@ import {
   userNotFound,
 } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
+import { formatJoiError } from '../../utils/helper'
 import {
   redeemForAirtimeSchema,
   redeemForCashSchema,
@@ -30,16 +31,10 @@ export const redeemForAirtime = catchController(
 
     const { error } = redeemForAirtimeSchema.validate(req.body)
     if (error) {
+      const { details, message } = formatJoiError(error)
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            error.message,
-            [],
-            error.details,
-          ),
-        )
+        .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
     const { network, amount, phoneNumber } = req.body
@@ -121,16 +116,10 @@ export const redeemForCash = catchController(
 
     const { error } = redeemForCashSchema.validate(req.body)
     if (error) {
+      const { details, message } = formatJoiError(error)
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            error.message,
-            [],
-            error.details,
-          ),
-        )
+        .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
     const { amount, accountNumber, bankName, accountName } = req.body

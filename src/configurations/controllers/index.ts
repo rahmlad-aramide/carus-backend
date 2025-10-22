@@ -6,6 +6,7 @@ import { AppDataSource } from '../../data-source'
 import { Configurations } from '../../entities/configurations'
 import { generalResponse, returnSuccess } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
+import { formatJoiError } from '../../utils/helper'
 import { updateConfigurationSchema } from '../../utils/validators/configuration'
 
 const configurationRepository = AppDataSource.getRepository(Configurations)
@@ -93,16 +94,10 @@ export const updateConfiguration = catchController(
     const { type } = req.params
     const { error } = updateConfigurationSchema.validate(req.body)
     if (error) {
+      const { details, message } = formatJoiError(error)
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            error.message,
-            [],
-            error.details,
-          ),
-        )
+        .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
     const { value } = req.body
@@ -133,7 +128,18 @@ export const getPointToNaira = catchController(
     const pointToNaira = await configurationRepository.findOne({
       where: { type: 'point_to_naira' },
     })
-
+    if (!pointToNaira) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            'Point to naira does not exist',
+          ),
+        )
+    }
     res
       .status(StatusCodes.OK)
       .json(generalResponse(StatusCodes.OK, pointToNaira, [], returnSuccess))

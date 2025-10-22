@@ -9,6 +9,7 @@ import {
   returnSuccess,
 } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
+import { formatJoiError } from '../../utils/helper'
 import {
   createCampaignSchema,
   updateCampaignSchema,
@@ -31,14 +32,15 @@ export const createCampaign = catchController(
   async (req: Request, res: Response) => {
     const { error } = createCampaignSchema.validate(req.body)
     if (error) {
+      const { details, message } = formatJoiError(error)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
             error.message,
-            [],
-            error.details,
+            details,
+            message,
           ),
         )
     }
@@ -67,14 +69,15 @@ export const updateCampaign = catchController(
     const { id } = req.params
     const { error } = updateCampaignSchema.validate(req.body)
     if (error) {
+      const { details, message } = formatJoiError(error)
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
           generalResponse(
             StatusCodes.BAD_REQUEST,
             error.message,
-            [],
-            error.details,
+            details,
+            message,
           ),
         )
     }
@@ -110,7 +113,7 @@ export const deleteCampaign = catchController(
     await donationRepository.remove(campaign)
     res
       .status(StatusCodes.OK)
-      .json(generalResponse(StatusCodes.OK, null, [], returnSuccess))
+      .json(generalResponse(StatusCodes.OK, {}, [], returnSuccess))
   },
 )
 
