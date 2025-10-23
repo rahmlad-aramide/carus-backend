@@ -10,6 +10,7 @@ import {
   googleAuth,
   loginUser,
   resendOtp,
+  resetPassword,
   verifyUserEmail,
 } from '../controllers'
 
@@ -21,7 +22,8 @@ router.post('/verify-user', verifyUserEmail)
 router.post('/resend-verification-otp', resendOtp)
 router.post('/forgot-password', forgotPassword)
 router.post('/forgot-password/confirm', confirmForgotPassword)
-router.post('/password/reset', changePassword)
+router.post('/password/reset', resetPassword)
+router.post('/password/change', changePassword)
 router.post('/refresh-token', getAccessToken)
 router.post('/google', googleAuth)
 router.post('/google-signup/complete', completeGoogleSignupProfile)
