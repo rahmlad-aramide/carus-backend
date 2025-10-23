@@ -10,7 +10,9 @@ import {
   returnSuccess,
   userNotFound,
 } from '../../helpers/constants'
+import { errorMessages } from '../../helpers/error-messages'
 import catchController from '../../utils/catchControllerAsyncs'
+import bcrypt from 'bcryptjs'
 
 const regionList = Object.values(RegionEnum).join(', ')
 const cityList = Object.values(CityEnum).join(', ')
@@ -400,3 +402,112 @@ export const editProfile = catchController(
 //     }, [], "Pickup address updated successfully."));
 
 // });
+
+export const changePassword = catchController(
+  async (req: Request, res: Response) => {
+    const { oldPassword, newPassword, confirmPassword } = req.body
+
+    const requiredFields = ['oldPassword', 'newPassword', 'confirmPassword']
+    if (requiredFields.some((field) => !req.body[field])) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            errorMessages.PASS_REQUIRED_FIELDS_ERROR,
+          ),
+        )
+    }
+    const user = req.user
+
+    if (user.isGoogleUser) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            "You can't change your password because you signed up with google",
+          ),
+        )
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'New password and confirm password do not match',
+          ),
+        )
+    }
+
+    const isOldPasswordCorrect = await bcrypt.compare(
+      oldPassword,
+      user.password,
+    )
+
+    if (!isOldPasswordCorrect) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'Old password is not correct',
+          ),
+        )
+    }
+
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+,-./:;<=>?@[\\\]^_`{|}~])(?=.{8,})/
+    if (!newPassword.match(passwordRegex)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            errorMessages.PASSWORD_REGEX_ERROR,
+          ),
+        )
+    }
+
+    if (user.password) {
+      const isOldPassword = await bcrypt.compare(newPassword, user.password)
+      if (isOldPassword) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'New password cannot be the same as old password',
+            ),
+          )
+      }
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10)
+    await AppDataSource.getRepository(User).save(user)
+    res
+      .status(StatusCodes.OK)
+      .json(
+        generalResponse(
+          StatusCodes.OK,
+          {},
+          [],
+          'Password has been changed successfully',
+        ),
+      )
+  },
+)
