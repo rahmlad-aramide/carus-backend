@@ -186,7 +186,7 @@ export const confirmForgotPassword = catchController(
   },
 )
 
-export const changePassword = catchController(
+export const resetPassword = catchController(
   async (req: Request, res: Response) => {
     const { token, newPassword }: { token: string; newPassword: string } =
       req.body
@@ -273,93 +273,76 @@ export const changePassword = catchController(
       .json(generalResponse(StatusCodes.OK, {}, [], 'Password has been reset'))
   },
 )
+export const changePassword = catchController(
+  async (req: Request, res: Response) => {
+    const { token, newPassword }: { token: string; newPassword: string } =
+      req.body
 
-// export const changePassword1 = catchController(
-//   async (req: Request, res: Response) => {
-//     const {
-//       otp,
-//       email,
-//       newPassword,
-//     }: { otp: string; email: string; newPassword: string } = req.body
+    //Check if required parameters are passed
+    if (!token || !newPassword) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            errorMessages.PASS_REQUIRED_FIELDS_ERROR,
+          ),
+        )
+    }
+    const payload = verifyEmailVerificationToken(token)
+    const { email } = payload
+    const user = await userRepository.findOneBy({ email })
 
-//     //Check if required parameters are passed
-//     if (!otp || !email || !newPassword) {
-//       return res
-//         .status(StatusCodes.BAD_REQUEST)
-//         .json(
-//           generalResponse(
-//             StatusCodes.BAD_REQUEST,
-//             {},
-//             [],
-//             errorMessages.PASS_REQUIRED_FIELDS_ERROR,
-//           ),
-//         )
-//     }
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(
+          generalResponse(
+            StatusCodes.NOT_FOUND,
+            {},
+            [],
+            errorMessages.USER_NOT_FOUND_ERROR,
+          ),
+        )
+    }
 
-//     const user = await userRepository.findOneBy({ email })
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+,-./:;<=>?@[\\\]^_`{|}~])(?=.{8,})/
+    if (!newPassword.match(passwordRegex)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            errorMessages.PASSWORD_REGEX_ERROR,
+          ),
+        )
+    }
 
-//     if (!user) {
-//       return res
-//         .status(StatusCodes.NOT_FOUND)
-//         .json(
-//           generalResponse(
-//             StatusCodes.NOT_FOUND,
-//             {},
-//             [],
-//             errorMessages.USER_NOT_FOUND_ERROR,
-//           ),
-//         )
-//     }
+    if (user.password) {
+      const isOldPassword = await bcrypt.compare(newPassword, user.password)
+      if (isOldPassword) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'New password cannot be the same as old password',
+            ),
+          )
+      }
+    }
 
-//     const passwordRegex =
-//       /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+,-./:;<=>?@[\\\]^_`{|}~])(?=.{8,})/
-//     if (!newPassword.match(passwordRegex)) {
-//       return res
-//         .status(StatusCodes.BAD_REQUEST)
-//         .json(
-//           generalResponse(
-//             StatusCodes.BAD_REQUEST,
-//             {},
-//             [],
-//             errorMessages.PASSWORD_REGEX_ERROR,
-//           ),
-//         )
-//     }
-
-//     //verify otp
-//     if (!validateOtp(user, otp)) {
-//       return res
-//         .status(StatusCodes.BAD_REQUEST)
-//         .json(
-//           generalResponse(
-//             StatusCodes.BAD_REQUEST,
-//             {},
-//             [],
-//             'OTP is incorrect or has expired',
-//           ),
-//         )
-//     }
-
-//     if (user.password) {
-//       const isOldPassword = await bcrypt.compare(newPassword, user.password)
-//       if (isOldPassword) {
-//         return res
-//           .status(StatusCodes.BAD_REQUEST)
-//           .json(
-//             generalResponse(
-//               StatusCodes.BAD_REQUEST,
-//               {},
-//               [],
-//               'New password cannot be the same as old password',
-//             ),
-//           )
-//       }
-//     }
-
-//     user.password = await bcrypt.hash(newPassword, 10)
-//     await userRepository.save(user)
-//     res
-//       .status(StatusCodes.OK)
-//       .json(generalResponse(StatusCodes.OK, {}, [], 'Password has been reset'))
-//   },
-// )
+    user.password = await bcrypt.hash(newPassword, 10)
+    await userRepository.save(user)
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, {}, [], 'Password has been reset'))
+  },
+)
