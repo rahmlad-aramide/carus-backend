@@ -54,12 +54,13 @@ export const toggleUserStatus = async (req: Request, res: Response) => {
 
 export const viewComplaints = async (req: Request, res: Response) => {
   try {
-    const { page = 1, pageSize = 10 } = req.query
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
     const contactRepository = AppDataSource.getRepository(Contact)
     const [complaints, totalCount] = await contactRepository.findAndCount({
       relations: ['user'],
-      skip: (Number(page) - 1) * Number(pageSize),
-      take: Number(pageSize),
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
 
     const pagination: Pagination = {
