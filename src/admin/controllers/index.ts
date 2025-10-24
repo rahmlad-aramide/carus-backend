@@ -564,14 +564,15 @@ export const fulfillSchedule = catchController(
 
 export const getAllSchedules = catchController(
   async (req: Request, res: Response) => {
-    const { page = 1, pageSize = 10 } = req.query
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
     const [schedules, totalCount] = await scheduleRepository.findAndCount({
       relations: {
         user: true,
         transaction: true,
       },
-      skip: (Number(page) - 1) * Number(pageSize),
-      take: Number(pageSize),
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
 
     const pagination: Pagination = {
@@ -612,7 +613,8 @@ export * from './donation.controller'
 
 export const getAllAccounts = catchController(
   async (req: Request, res: Response) => {
-    const { page = 1, pageSize = 10 } = req.query
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
     const [users, totalCount] = await userRepository.findAndCount({
       relations: {
         wallet: true,
@@ -620,8 +622,8 @@ export const getAllAccounts = catchController(
       where: {
         role: 'user',
       },
-      skip: (Number(page) - 1) * Number(pageSize),
-      take: Number(pageSize),
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
 
     const pagination: Pagination = {
