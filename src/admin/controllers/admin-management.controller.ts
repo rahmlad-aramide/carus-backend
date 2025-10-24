@@ -1,11 +1,11 @@
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
+import catchController from 'src/utils/catchControllerAsyncs'
 
 import { AppDataSource } from '../../data-source'
 import { Contact } from '../../entities/contact'
 import { User } from '../../entities/user'
 import {
-  anErrorOccurred,
   generalResponse,
   Pagination,
   userNotFound,
@@ -34,40 +34,37 @@ export const toggleUserStatus = catchController(
           StatusCodes.OK,
           updatedUser,
           [],
-          `User has been ${updatedUser.isDisabled ? 'disabled' : 'enabled'}`, 
+          `User has been ${updatedUser.isDisabled ? 'disabled' : 'enabled'}`,
         ),
       )
   },
 )
 
 export const viewComplaints = async (req: Request, res: Response) => {
-export const viewComplaints = catchController(
-  async (req: Request, res: Response) => {
-    const page = parseInt(req.query.page as string, 10) || 1
-    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
-    const contactRepository = AppDataSource.getRepository(Contact)
-    const [complaints, totalCount] = await contactRepository.findAndCount({
-      relations: ['user'],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    })
+  const page = parseInt(req.query.page as string, 10) || 1
+  const pageSize = parseInt(req.query.pageSize as string, 10) || 10
+  const contactRepository = AppDataSource.getRepository(Contact)
+  const [complaints, totalCount] = await contactRepository.findAndCount({
+    relations: ['user'],
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  })
 
-    const pagination: Pagination = {
-      currentPage: Number(page),
-      totalPages: Math.ceil(totalCount / Number(pageSize)),
-      pageSize: Number(pageSize),
-      totalCount,
-    }
-    return res
-      .status(StatusCodes.OK)
-      .json(
-        generalResponse(
-          StatusCodes.OK,
-          complaints,
-          [],
-          'Complaints fetched successfully',
-          pagination,
-        ),
-      )
-  },
-)
+  const pagination: Pagination = {
+    currentPage: Number(page),
+    totalPages: Math.ceil(totalCount / Number(pageSize)),
+    pageSize: Number(pageSize),
+    totalCount,
+  }
+  return res
+    .status(StatusCodes.OK)
+    .json(
+      generalResponse(
+        StatusCodes.OK,
+        complaints,
+        [],
+        'Complaints fetched successfully',
+        pagination,
+      ),
+    )
+}
