@@ -204,7 +204,7 @@ export const getDashboardData = catchController(
     const dashboardData = {
       userCount,
       scheduleCount,
-      totalWalletAmount,
+      totalWalletAmount: totalWalletAmount.totalWalletAmount || 0,
     }
 
     res
