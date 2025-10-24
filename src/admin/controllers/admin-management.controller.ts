@@ -11,10 +11,10 @@ import {
   userNotFound,
 } from '../../helpers/constants'
 
-export const toggleUserStatus = async (req: Request, res: Response) => {
-  const { id } = req.params
+export const toggleUserStatus = catchController(
+  async (req: Request, res: Response) => {
+    const { id } = req.params
 
-  try {
     const userRepository = AppDataSource.getRepository(User)
     const user = await userRepository.findOne({ where: { id } })
 
@@ -34,23 +34,11 @@ export const toggleUserStatus = async (req: Request, res: Response) => {
           StatusCodes.OK,
           updatedUser,
           [],
-          `User has been ${updatedUser.isDisabled ? 'disabled' : 'enabled'}`,
+          `User has been ${updatedUser.isDisabled ? 'disabled' : 'enabled'}`, 
         ),
       )
-  } catch (error) {
-    console.error(error)
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(
-        generalResponse(
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          {},
-          [],
-          anErrorOccurred,
-        ),
-      )
-  }
-}
+  },
+)
 
 export const viewComplaints = async (req: Request, res: Response) => {
   try {
