@@ -143,13 +143,14 @@ export const loginAdmin = catchController(
 
 export const getAllTransactions = catchController(
   async (req: Request, res: Response) => {
-    const { page = 1, pageSize = 10 } = req.query
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
     const transactionRepository = AppDataSource.getRepository(Transaction)
     const [transactions, totalCount] = await transactionRepository.findAndCount(
       {
         relations: ['user', 'wallet'],
-        skip: (Number(page) - 1) * Number(pageSize),
-        take: Number(pageSize),
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       },
     )
 
