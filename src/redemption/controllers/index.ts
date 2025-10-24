@@ -37,7 +37,7 @@ export const redeemForAirtime = catchController(
         .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
-    const { network, amount, phoneNumber } = req.body
+    const { network, points, phoneNumber } = req.body
 
     const walletRepository = AppDataSource.getRepository(Wallet)
     const redemptionRepository = AppDataSource.getRepository(Redemption)
@@ -55,7 +55,7 @@ export const redeemForAirtime = catchController(
             StatusCodes.BAD_REQUEST,
             '',
             [],
-            'point to naira not set',
+            'Point to naira not set',
           ),
         )
     }
@@ -63,7 +63,7 @@ export const redeemForAirtime = catchController(
     const wallet = await walletRepository.findOne({
       where: { user: { id: user.id } },
     })
-    if (!wallet || (wallet.points || 0) < amount) {
+    if (!wallet || (wallet.points || 0) < points) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -71,27 +71,14 @@ export const redeemForAirtime = catchController(
         )
     }
 
-    const nairaAmount = amount * Number(pointToNaira?.value)
-    if ((wallet.naira_amount || 0) < nairaAmount) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            '',
-            [],
-            insufficientNairaAmount,
-          ),
-        )
-    }
+    const nairapoints = points * Number(pointToNaira?.value)
 
-    wallet.points = (wallet.points || 0) - amount
-    wallet.naira_amount = (wallet.naira_amount || 0) - nairaAmount
+    wallet.points = (wallet.points || 0) - points
     await walletRepository.save(wallet)
 
     const newRedemption = new Redemption()
     newRedemption.type = RedemptionType.AIRTIME
-    newRedemption.amount = amount
+    newRedemption.amount = points
     newRedemption.network = network
     newRedemption.phoneNumber = phoneNumber
     newRedemption.user = user
@@ -100,7 +87,12 @@ export const redeemForAirtime = catchController(
     res
       .status(StatusCodes.CREATED)
       .json(
-        generalResponse(StatusCodes.CREATED, newRedemption, [], returnSuccess),
+        generalResponse(
+          StatusCodes.CREATED,
+          newRedemption,
+          [],
+          `${returnSuccess}, you'll be credited with ${nairapoints} airtime soon.`,
+        ),
       )
   },
 )
@@ -122,7 +114,7 @@ export const redeemForCash = catchController(
         .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
-    const { amount, accountNumber, bankName, accountName } = req.body
+    const { points, accountNumber, bankName, accountName } = req.body
 
     const walletRepository = AppDataSource.getRepository(Wallet)
     const redemptionRepository = AppDataSource.getRepository(Redemption)
@@ -140,7 +132,7 @@ export const redeemForCash = catchController(
             StatusCodes.BAD_REQUEST,
             '',
             [],
-            'point to naira not set',
+            'Point to naira not set',
           ),
         )
     }
@@ -148,7 +140,7 @@ export const redeemForCash = catchController(
     const wallet = await walletRepository.findOne({
       where: { user: { id: user.id } },
     })
-    if (!wallet || (wallet.points || 0) < amount) {
+    if (!wallet || (wallet.points || 0) < points) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -156,26 +148,13 @@ export const redeemForCash = catchController(
         )
     }
 
-    const nairaAmount = amount * Number(pointToNaira?.value)
-    if ((wallet.naira_amount || 0) < nairaAmount) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            '',
-            [],
-            insufficientNairaAmount,
-          ),
-        )
-    }
-    wallet.points = (wallet.points || 0) - amount
-    wallet.naira_amount = (wallet.naira_amount || 0) - nairaAmount
+    const nairapoints = points * Number(pointToNaira?.value)
+    wallet.points = (wallet.points || 0) - points
     await walletRepository.save(wallet)
 
     const newRedemption = new Redemption()
     newRedemption.type = RedemptionType.CASH
-    newRedemption.amount = amount
+    newRedemption.amount = points
     newRedemption.accountNumber = accountNumber
     newRedemption.bankName = bankName
     newRedemption.accountName = accountName
@@ -185,7 +164,12 @@ export const redeemForCash = catchController(
     res
       .status(StatusCodes.CREATED)
       .json(
-        generalResponse(StatusCodes.CREATED, newRedemption, [], returnSuccess),
+        generalResponse(
+          StatusCodes.CREATED,
+          newRedemption,
+          [],
+          `${returnSuccess}, you'll be credited with #${nairapoints} soon.`,
+        ),
       )
   },
 )

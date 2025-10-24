@@ -40,12 +40,15 @@ export const getWallet = catchController(
       where: { type: 'point_to_naira' },
     })
 
+    const nairaAmount =
+      (wallet?.points || 0) * (parseFloat(pointToNaira?.value || '0'))
+
     res.status(StatusCodes.OK).json(
       generalResponse(
         StatusCodes.OK,
         {
           id: wallet?.id,
-          naira_amount: wallet?.naira_amount,
+          naira_amount: nairaAmount,
           points: wallet?.points,
           last_transaction_time: wallet?.updatedAt,
           point_to_naira: pointToNaira?.value,
