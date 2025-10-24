@@ -193,13 +193,14 @@ export const getDashboardData = catchController(
     const scheduleRepository = AppDataSource.getRepository(Schedule)
     const walletRepository = AppDataSource.getRepository(Wallet)
 
-    const userCount = await userRepository.count({ where: { role: 'user' } })
-    const scheduleCount = await scheduleRepository.count()
-    const { totalWalletAmount } = await walletRepository
-      .createQueryBuilder('wallet')
-      .select('SUM(wallet.naira_amount)', 'totalWalletAmount')
-      .getRawOne()
-
+    const [userCount, scheduleCount, totalWalletAmount] = await Promise.all([
+      userRepository.count({ where: { role: 'user' } }),
+      scheduleRepository.count(),
+      walletRepository
+        .createQueryBuilder('wallet')
+        .select('SUM(wallet.naira_amount)', 'totalWalletAmount')
+        .getRawOne(),
+    ])
     const dashboardData = {
       userCount,
       scheduleCount,
