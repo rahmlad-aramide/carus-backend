@@ -41,7 +41,8 @@ export const toggleUserStatus = catchController(
 )
 
 export const viewComplaints = async (req: Request, res: Response) => {
-  try {
+export const viewComplaints = catchController(
+  async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string, 10) || 1
     const pageSize = parseInt(req.query.pageSize as string, 10) || 10
     const contactRepository = AppDataSource.getRepository(Contact)
@@ -68,17 +69,5 @@ export const viewComplaints = async (req: Request, res: Response) => {
           pagination,
         ),
       )
-  } catch (error) {
-    console.error(error)
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(
-        generalResponse(
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          {},
-          [],
-          anErrorOccurred,
-        ),
-      )
-  }
-}
+  },
+)
