@@ -181,6 +181,7 @@ export const createUser = catchController(
       otp: otp,
       otpExpires: otpExpires,
       country_code: country_code,
+      isGoogleUser: false,
     })
 
     //Send Otp
