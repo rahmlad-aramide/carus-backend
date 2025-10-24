@@ -76,15 +76,19 @@ export const createContribution = catchController(
     newContribution.donation = campaign
     await contributionRepository.save(newContribution)
 
-    res
-      .status(StatusCodes.CREATED)
-      .json(
-        generalResponse(
-          StatusCodes.CREATED,
-          newContribution,
-          [],
-          returnSuccess,
-        ),
-      )
+    res.status(StatusCodes.CREATED).json(
+      generalResponse(
+        StatusCodes.CREATED,
+        {
+          amount: newContribution.amount,
+          donation: newContribution.donation,
+          id: newContribution.id,
+          createdAt: newContribution.createdAt,
+          updatedAt: newContribution.updatedAt,
+        },
+        [],
+        returnSuccess,
+      ),
+    )
   },
 )

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { Request, Response } from 'express'
+import fs from 'fs/promises'
 import { StatusCodes } from 'http-status-codes'
 
 import { CityEnum, RegionEnum } from '../../@types/user'
@@ -76,12 +77,13 @@ export const getAccount = catchController(
 export const editProfile = catchController(
   // eslint-disable-next-line sonarjs/cognitive-complexity
   async (req: Request, res: Response) => {
-    // const payload: { username?: string, first_name?: string, last_name?: string, phone?: string } = {}
-
     const user: User | undefined = req.user
     const userRepository = AppDataSource.getRepository(User)
 
     if (!user) {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.NOT_FOUND)
         .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
@@ -95,6 +97,9 @@ export const editProfile = catchController(
       })
 
       if (existingUsername) {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.CONFLICT)
           .json(
@@ -108,6 +113,9 @@ export const editProfile = catchController(
       }
 
       if (req.body.username.includes(' ') || req.body.username.length < 3) {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -121,6 +129,9 @@ export const editProfile = catchController(
       }
 
       if (existingUsername != req.body.username && req.body.username === '') {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -142,6 +153,9 @@ export const editProfile = catchController(
 
     if (req.body.first_name) {
       if (!/^[A-Za-z\-']+$/.test(req.body.first_name)) {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -158,6 +172,9 @@ export const editProfile = catchController(
         user.first_name != req.body.first_name &&
         req.body.first_name === ''
       ) {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -175,6 +192,9 @@ export const editProfile = catchController(
 
     if (req.body.last_name) {
       if (!/^[A-Za-z\-']+$/.test(req.body.last_name)) {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -188,6 +208,9 @@ export const editProfile = catchController(
       }
 
       if (user.last_name != req.body.last_name && req.body.last_name === '') {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -205,6 +228,9 @@ export const editProfile = catchController(
     // Check if the phone number is provided and not an empty string.
     if (req.body.phone !== undefined) {
       if (req.body.phone === '') {
+        if (req.file) {
+          await fs.unlink(req.file.path)
+        }
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json(
@@ -222,6 +248,9 @@ export const editProfile = catchController(
         // Validate the new phone number against the regex.
         const phoneRegex = /^[0-9]{10}$/
         if (!req.body.phone.match(phoneRegex)) {
+          if (req.file) {
+            await fs.unlink(req.file.path)
+          }
           return res
             .status(StatusCodes.BAD_REQUEST)
             .json(
@@ -241,6 +270,9 @@ export const editProfile = catchController(
           },
         })
         if (existingPhone) {
+          if (req.file) {
+            await fs.unlink(req.file.path)
+          }
           return res
             .status(StatusCodes.CONFLICT)
             .json(
@@ -259,6 +291,9 @@ export const editProfile = catchController(
     }
 
     if (req.body.address && req.body.address.length < 5) {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -272,6 +307,9 @@ export const editProfile = catchController(
     }
 
     if (user.address != req.body.address && req.body.address === '') {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -290,6 +328,9 @@ export const editProfile = catchController(
       req.body.region &&
       !Object.values(RegionEnum).includes(req.body.region)
     ) {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -303,6 +344,9 @@ export const editProfile = catchController(
     }
 
     if (user.region != req.body.region && req.body.region === '') {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -318,6 +362,9 @@ export const editProfile = catchController(
     user.region = req.body.region
 
     if (req.body.city && !Object.values(CityEnum).includes(req.body.city)) {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -331,6 +378,9 @@ export const editProfile = catchController(
     }
 
     if (user.city != req.body.city && req.body.city === '') {
+      if (req.file) {
+        await fs.unlink(req.file.path)
+      }
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(

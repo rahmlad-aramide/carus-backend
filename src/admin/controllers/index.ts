@@ -116,13 +116,14 @@ export const loginAdmin = catchController(
             username: user.username,
             email: user.email,
             status: user.status,
+            role: user.role,
             refresh_token: refresh_token,
             refresh_token_expires: refresh_token_expires,
             access_token: access_token,
             access_token_expires: access_token_expires,
           },
           [],
-          'User logged in successfully',
+          'Admin logged in successfully',
         ),
       )
     } else {

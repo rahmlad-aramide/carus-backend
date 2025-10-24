@@ -24,6 +24,7 @@ import {
   toggleUserStatus,
   viewComplaints,
 } from '../controllers/admin-management.controller'
+import adminConfigurationRoutes from '../../configurations/routes/adminRoutes'
 import verifyAdmin from '../../helpers/verifyAdmin'
 
 const router = Router()
@@ -48,5 +49,6 @@ router.get('/donations', verifyAdmin, getDonations)
 router.get('/donations/:id', verifyAdmin, getDonation)
 router.get('/complaints', verifyAdmin, viewComplaints)
 router.get('/transactions', verifyAdmin, getAllTransactions)
+router.use('/configurations', verifyAdmin, adminConfigurationRoutes)
 
 export default router

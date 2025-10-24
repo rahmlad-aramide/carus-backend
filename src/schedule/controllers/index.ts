@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import fs from 'fs/promises'
 import { StatusCodes } from 'http-status-codes'
 import { User } from 'src/entities/user'
 
@@ -24,6 +25,7 @@ const scheduleRepository = AppDataSource.getRepository(Schedule)
 const walletRepository = AppDataSource.getRepository(Wallet)
 const statusList = Object.values(ScheduleStatusEnum).join(', ')
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 const schedulePickup = catchController(async (req: Request, res: Response) => {
   const {
     material,
@@ -43,6 +45,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
     'address',
   ]
   if (requiredFields.some((field) => !req.body[field])) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -57,6 +62,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
 
   //validate the material
   if (material && !Object.values(MaterialEnum).includes(material)) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -73,6 +81,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
 
   //validate the category
   if (category && !Object.values(CategoryEnum).includes(category)) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -89,6 +100,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
 
   //validate material amount
   if (material_amount < 50 || material_amount > 10000) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -103,6 +117,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
 
   //validate container amount
   if (container_amount < 1 || container_amount > 50) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -118,6 +135,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
   const user: User | undefined = req.user
 
   if (!user) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.NOT_FOUND)
       .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
@@ -135,6 +155,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
   })
 
   if (!address) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -152,6 +175,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
   //validate date orrrrr... vali-DATE :)))
   const dateString = new Date(req.body.date)
   if (dateString < new Date(Date.now())) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json(
@@ -167,6 +193,9 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
   const date = dateString
 
   if (!wallet) {
+    if (req.file) {
+      await fs.unlink(req.file.path)
+    }
     return res
       .status(StatusCodes.NOT_FOUND)
       .json(generalResponse(StatusCodes.NOT_FOUND, {}, [], 'Wallet not found'))

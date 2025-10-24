@@ -163,6 +163,7 @@ export const loginUser = catchController(
             first_name: user.first_name,
             last_name: user.last_name,
             email: user.email,
+            role: user.role,
             status: user.status,
             refresh_token: refresh_token,
             refresh_token_expires: refresh_token_expires,
