@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import multer from 'multer'
 import path from 'path'
 
@@ -6,7 +7,8 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/')
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`)
+    const randomName = crypto.randomBytes(16).toString('hex')
+    cb(null, `${randomName}${path.extname(file.originalname)}`)
   },
 })
 

@@ -193,11 +193,10 @@ export const getDashboardData = catchController(
 
     const userCount = await userRepository.count({ where: { role: 'user' } })
     const scheduleCount = await scheduleRepository.count()
-    const wallets = await walletRepository.find()
-    const totalWalletAmount = wallets.reduce(
-      (acc, wallet) => acc + Number(wallet.naira_amount),
-      0,
-    )
+    const { totalWalletAmount } = await walletRepository
+      .createQueryBuilder('wallet')
+      .select('SUM(wallet.naira_amount)', 'totalWalletAmount')
+      .getRawOne()
 
     const dashboardData = {
       userCount,

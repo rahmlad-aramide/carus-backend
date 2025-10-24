@@ -18,7 +18,7 @@ export class Contact extends BaseEntity {
   @Column()
   message?: string
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User)
   user?: User
 
   @CreateDateColumn()
