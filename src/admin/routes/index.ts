@@ -6,28 +6,37 @@ import {
   fulfillSchedule,
   getAllAccounts,
   getAllSchedules,
+  getAllTransactions,
+  getDashboardData,
   getTotalWalletAmount,
   loginAdmin,
 } from '../controllers'
+import {
+  assignAdmin,
+  createAdmin,
+  removeAdmin,
+} from '../controllers/admin-account.controller'
 import {
   getDonation,
   getDonations,
 } from '../controllers/admin-donation.controller'
 import {
-  assignAdmin,
-  createAdmin,
-  removeAdmin,
-} from '../controllers/register-admin.controller'
+  toggleUserStatus,
+  viewComplaints,
+} from '../controllers/admin-management.controller'
 import verifyAdmin from '../../helpers/verifyAdmin'
 
 const router = Router()
 
 router.post('/login', loginAdmin)
 
+router.get('/dashboard', verifyAdmin, getDashboardData)
+
 // Admin Management Routes
 router.post('/create-admin', verifyAdmin, createAdmin)
 router.patch('/assign-admin/:id', verifyAdmin, assignAdmin)
 router.patch('/remove-admin/:id', verifyAdmin, removeAdmin)
+router.patch('/toggle-user-status/:id', verifyAdmin, toggleUserStatus)
 
 router.put('/schedule/accept/:id', verifyAdmin, acceptSchedule)
 router.put('/schedule/cancel/:id', verifyAdmin, cancelSchedule)
@@ -37,5 +46,7 @@ router.get('/accounts', verifyAdmin, getAllAccounts)
 router.get('/total-wallet-amount', verifyAdmin, getTotalWalletAmount)
 router.get('/donations', verifyAdmin, getDonations)
 router.get('/donations/:id', verifyAdmin, getDonation)
+router.get('/complaints', verifyAdmin, viewComplaints)
+router.get('/transactions', verifyAdmin, getAllTransactions)
 
 export default router

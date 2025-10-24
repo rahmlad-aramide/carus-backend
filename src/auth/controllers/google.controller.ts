@@ -120,6 +120,7 @@ export const googleAuth = catchController(
       first_name: first_name,
       last_name: last_name,
       googleId: googleId,
+      isGoogleUser: true,
     })
 
     await userRepository.save(newUser)

@@ -11,6 +11,7 @@ import { Wallet } from '../../entities/wallet'
 import {
   generalResponse,
   invalidCredentials,
+  Pagination,
   returnSuccess,
   userNotFound,
 } from '../../helpers/constants'
@@ -139,6 +140,77 @@ export const loginAdmin = catchController(
   },
 )
 
+export const getAllTransactions = catchController(
+  async (req: Request, res: Response) => {
+    const { page = 1, pageSize = 10 } = req.query
+    const transactionRepository = AppDataSource.getRepository(Transaction)
+    const [transactions, totalCount] = await transactionRepository.findAndCount(
+      {
+        relations: ['user', 'wallet'],
+        skip: (Number(page) - 1) * Number(pageSize),
+        take: Number(pageSize),
+      },
+    )
+
+    const pagination: Pagination = {
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalCount / Number(pageSize)),
+      pageSize: Number(pageSize),
+      totalCount,
+    }
+
+    res.status(StatusCodes.OK).json(
+      generalResponse(
+        StatusCodes.OK,
+        transactions.map((transaction) => ({
+          id: transaction.id,
+          amount: transaction.amount,
+          charges: transaction.charges,
+          status: transaction.status,
+          type: transaction.type,
+          user: {
+            id: transaction.user?.id,
+            email: transaction.user?.email,
+          },
+          wallet: {
+            id: transaction.wallet?.id,
+            naira_amount: transaction.wallet?.naira_amount,
+          },
+        })),
+        [],
+        returnSuccess,
+        pagination,
+      ),
+    )
+  },
+)
+
+export const getDashboardData = catchController(
+  async (req: Request, res: Response) => {
+    const userRepository = AppDataSource.getRepository(User)
+    const scheduleRepository = AppDataSource.getRepository(Schedule)
+    const walletRepository = AppDataSource.getRepository(Wallet)
+
+    const userCount = await userRepository.count({ where: { role: 'user' } })
+    const scheduleCount = await scheduleRepository.count()
+    const wallets = await walletRepository.find()
+    const totalWalletAmount = wallets.reduce(
+      (acc, wallet) => acc + Number(wallet.naira_amount),
+      0,
+    )
+
+    const dashboardData = {
+      userCount,
+      scheduleCount,
+      totalWalletAmount,
+    }
+
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, dashboardData, [], returnSuccess))
+  },
+)
+
 export const acceptSchedule = catchController(
   async (req: Request, res: Response) => {
     const scheduleId = req.params.id
@@ -170,7 +242,7 @@ export const acceptSchedule = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'schedule has already been accepted, cancelled, or fulfilled',
+            'Schedule has already been accepted, cancelled, or fulfilled',
           ),
         )
     }
@@ -203,7 +275,7 @@ export const acceptSchedule = catchController(
           StatusCodes.OK,
           {},
           [],
-          `schedule has been accepted, awaiting ${existingSchedule.category} `,
+          `Schedule has been accepted, awaiting ${existingSchedule.category} `,
         ),
       )
   },
@@ -222,7 +294,7 @@ export const cancelSchedule = catchController(
       return res
         .status(StatusCodes.NOT_FOUND)
         .json(
-          generalResponse(StatusCodes.NOT_FOUND, {}, [], 'invalid schedule id'),
+          generalResponse(StatusCodes.NOT_FOUND, {}, [], 'Invalid schedule id'),
         )
     }
 
@@ -238,7 +310,7 @@ export const cancelSchedule = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'schedule has already been cancelled, or fulfilled',
+            'Schedule has already been cancelled, or fulfilled',
           ),
         )
     }
@@ -491,12 +563,22 @@ export const fulfillSchedule = catchController(
 
 export const getAllSchedules = catchController(
   async (req: Request, res: Response) => {
-    const schedules = await scheduleRepository.find({
+    const { page = 1, pageSize = 10 } = req.query
+    const [schedules, totalCount] = await scheduleRepository.findAndCount({
       relations: {
         user: true,
         transaction: true,
       },
+      skip: (Number(page) - 1) * Number(pageSize),
+      take: Number(pageSize),
     })
+
+    const pagination: Pagination = {
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalCount / Number(pageSize)),
+      pageSize: Number(pageSize),
+      totalCount,
+    }
 
     res.status(StatusCodes.OK).json(
       generalResponse(
@@ -519,6 +601,7 @@ export const getAllSchedules = catchController(
         })),
         [],
         returnSuccess,
+        pagination,
       ),
     )
   },
@@ -528,14 +611,24 @@ export * from './donation.controller'
 
 export const getAllAccounts = catchController(
   async (req: Request, res: Response) => {
-    const users = await userRepository.find({
+    const { page = 1, pageSize = 10 } = req.query
+    const [users, totalCount] = await userRepository.findAndCount({
       relations: {
         wallet: true,
       },
       where: {
         role: 'user',
       },
+      skip: (Number(page) - 1) * Number(pageSize),
+      take: Number(pageSize),
     })
+
+    const pagination: Pagination = {
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalCount / Number(pageSize)),
+      pageSize: Number(pageSize),
+      totalCount,
+    }
 
     res.status(StatusCodes.OK).json(
       generalResponse(
@@ -558,6 +651,7 @@ export const getAllAccounts = catchController(
         })),
         [],
         returnSuccess,
+        pagination,
       ),
     )
   },

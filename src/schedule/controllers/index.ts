@@ -182,6 +182,7 @@ const schedulePickup = catchController(async (req: Request, res: Response) => {
     status: status,
     user: user,
     schedule_date: new Date(Date.now()),
+    image: req.file?.path,
   })
 
   await scheduleRepository.save(newSchedule)
