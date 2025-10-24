@@ -72,21 +72,8 @@ export const redeemForAirtime = catchController(
     }
 
     const nairapoints = points * Number(pointToNaira?.value)
-    if ((wallet.naira_amount || 0) < nairapoints) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            '',
-            [],
-            insufficientNairaAmount,
-          ),
-        )
-    }
 
     wallet.points = (wallet.points || 0) - points
-    wallet.naira_amount = (wallet.naira_amount || 0) - nairapoints
     await walletRepository.save(wallet)
 
     const newRedemption = new Redemption()
@@ -162,20 +149,7 @@ export const redeemForCash = catchController(
     }
 
     const nairapoints = points * Number(pointToNaira?.value)
-    if ((wallet.naira_amount || 0) < nairapoints) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            '',
-            [],
-            insufficientNairaAmount,
-          ),
-        )
-    }
     wallet.points = (wallet.points || 0) - points
-    wallet.naira_amount = (wallet.naira_amount || 0) - nairapoints
     await walletRepository.save(wallet)
 
     const newRedemption = new Redemption()

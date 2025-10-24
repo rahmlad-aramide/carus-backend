@@ -19,9 +19,6 @@ export class Wallet {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   points?: number
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  naira_amount?: number
-
   @Column({ nullable: true })
   updatedAt?: Date
 
