@@ -555,7 +555,7 @@ export const fulfillSchedule = catchController(
           StatusCodes.OK,
           {},
           [],
-          `schedule has been completed, user's wallet will be credited with ₦${calculatedNairaAmount.toLocaleString()}`,
+          `Schedule has been completed, user's wallet will be credited with ₦${calculatedNairaAmount.toLocaleString()}`,
         ),
       )
   },
