@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 
@@ -12,7 +13,6 @@ import {
 } from '../../helpers/constants'
 import { errorMessages } from '../../helpers/error-messages'
 import catchController from '../../utils/catchControllerAsyncs'
-import bcrypt from 'bcryptjs'
 
 const regionList = Object.values(RegionEnum).join(', ')
 const cityList = Object.values(CityEnum).join(', ')
@@ -24,7 +24,7 @@ export const getAccount = catchController(
     if (!user) {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json(generalResponse(StatusCodes.NOT_FOUND, '', [], userNotFound))
+        .json(generalResponse(StatusCodes.NOT_FOUND, {}, [], userNotFound))
     }
 
     const walletRepository = AppDataSource.getRepository(Wallet)
@@ -420,9 +420,15 @@ export const changePassword = catchController(
           ),
         )
     }
-    const user = req.user
+    const user: User | undefined = req.user
 
-    if (user.isGoogleUser) {
+    if (!user) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(generalResponse(StatusCodes.BAD_REQUEST, {}, [], userNotFound))
+    }
+
+    if (user?.googleId) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -448,24 +454,6 @@ export const changePassword = catchController(
         )
     }
 
-    const isOldPasswordCorrect = await bcrypt.compare(
-      oldPassword,
-      user.password,
-    )
-
-    if (!isOldPasswordCorrect) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            {},
-            [],
-            'Old password is not correct',
-          ),
-        )
-    }
-
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*()_+,-./:;<=>?@[\\\]^_`{|}~])(?=.{8,})/
     if (!newPassword.match(passwordRegex)) {
@@ -482,6 +470,23 @@ export const changePassword = catchController(
     }
 
     if (user.password) {
+      const isOldPasswordCorrect = await bcrypt.compare(
+        oldPassword,
+        user.password,
+      )
+      if (!isOldPasswordCorrect) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json(
+            generalResponse(
+              StatusCodes.BAD_REQUEST,
+              {},
+              [],
+              'Old password is not correct',
+            ),
+          )
+      }
+
       const isOldPassword = await bcrypt.compare(newPassword, user.password)
       if (isOldPassword) {
         return res

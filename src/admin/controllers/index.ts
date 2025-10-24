@@ -524,7 +524,7 @@ export const getAllSchedules = catchController(
   },
 )
 
-export * from './donationController'
+export * from './donation.controller'
 
 export const getAllAccounts = catchController(
   async (req: Request, res: Response) => {
