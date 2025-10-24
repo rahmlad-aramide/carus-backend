@@ -60,4 +60,7 @@ export class Schedule {
   @ManyToOne(() => User, (user) => user.orders, { onDelete: 'SET NULL' })
   @JoinColumn()
   user?: User
+
+  @Column({ nullable: true })
+  image?: string
 }

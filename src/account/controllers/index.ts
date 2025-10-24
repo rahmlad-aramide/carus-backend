@@ -5,6 +5,7 @@ import { CityEnum, RegionEnum } from '../../@types/user'
 import { AppDataSource } from '../../data-source'
 import { User } from '../../entities/user'
 import { Wallet } from '../../entities/wallet'
+import { Contact } from '../../entities/contact'
 import {
   generalResponse,
   returnSuccess,
@@ -133,8 +134,10 @@ export const editProfile = catchController(
       }
 
       user.username = req.body.username
-      const randomNumber = Math.floor(Math.random() * (4 - 1 + 1)) + 1
-      user.avatar = `https://robohash.org/${req.body.username}?set=${randomNumber}&size=500x500`
+    }
+
+    if (req.file) {
+      user.avatar = req.file.path
     }
 
     if (req.body.first_name) {
@@ -507,6 +510,39 @@ export const changePassword = catchController(
           {},
           [],
           'Password has been changed successfully',
+        ),
+      )
+  },
+)
+
+export const lodgeComplaint = catchController(
+  async (req: Request, res: Response) => {
+    const { message } = req.body
+    if (!message) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            errorMessages.PASS_REQUIRED_FIELDS_ERROR,
+          ),
+        )
+    }
+
+    const complaint = new Contact()
+    complaint.message = message
+    complaint.user = req.user
+    await AppDataSource.getRepository(Contact).save(complaint)
+    res
+      .status(StatusCodes.OK)
+      .json(
+        generalResponse(
+          StatusCodes.OK,
+          {},
+          [],
+          'Your complaint has been received, we will get back to you shortly',
         ),
       )
   },
