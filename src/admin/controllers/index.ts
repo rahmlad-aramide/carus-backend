@@ -11,6 +11,7 @@ import { Wallet } from '../../entities/wallet'
 import {
   generalResponse,
   invalidCredentials,
+  Pagination,
   returnSuccess,
   userNotFound,
 } from '../../helpers/constants'
@@ -115,13 +116,14 @@ export const loginAdmin = catchController(
             username: user.username,
             email: user.email,
             status: user.status,
+            role: user.role,
             refresh_token: refresh_token,
             refresh_token_expires: refresh_token_expires,
             access_token: access_token,
             access_token_expires: access_token_expires,
           },
           [],
-          'User logged in successfully',
+          'Admin logged in successfully',
         ),
       )
     } else {
@@ -136,6 +138,94 @@ export const loginAdmin = catchController(
           ),
         )
     }
+  },
+)
+
+export const getAllTransactions = catchController(
+  async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
+    const transactionRepository = AppDataSource.getRepository(Transaction)
+    const configurationRepository = AppDataSource.getRepository(Configurations)
+    const [transactions, totalCount] = await transactionRepository.findAndCount(
+      {
+        relations: ['user', 'wallet'],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      },
+    )
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+
+    const pagination: Pagination = {
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalCount / Number(pageSize)),
+      pageSize: Number(pageSize),
+      totalCount,
+    }
+
+    res.status(StatusCodes.OK).json(
+      generalResponse(
+        StatusCodes.OK,
+        transactions.map((transaction) => {
+          const nairaAmount =
+            (transaction.wallet?.points || 0) *
+            (parseFloat(pointToNaira?.value || '0'))
+          return {
+            id: transaction.id,
+            amount: transaction.amount,
+            charges: transaction.charges,
+            status: transaction.status,
+            type: transaction.type,
+            user: {
+              id: transaction.user?.id,
+              email: transaction.user?.email,
+            },
+            wallet: {
+              id: transaction.wallet?.id,
+              naira_amount: nairaAmount,
+            },
+          }
+        }),
+        [],
+        returnSuccess,
+        pagination,
+      ),
+    )
+  },
+)
+
+export const getDashboardData = catchController(
+  async (req: Request, res: Response) => {
+    const userRepository = AppDataSource.getRepository(User)
+    const scheduleRepository = AppDataSource.getRepository(Schedule)
+    const walletRepository = AppDataSource.getRepository(Wallet)
+
+    const configurationRepository = AppDataSource.getRepository(Configurations)
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+    const [userCount, scheduleCount, totalWalletPoints] = await Promise.all([
+      userRepository.count({ where: { role: 'user' } }),
+      scheduleRepository.count(),
+      walletRepository
+        .createQueryBuilder('wallet')
+        .select('SUM(wallet.points)', 'totalWalletPoints')
+        .getRawOne(),
+    ])
+    const totalWalletAmount =
+      (totalWalletPoints.totalWalletPoints || 0) *
+      (parseFloat(pointToNaira?.value || '0'))
+    const dashboardData = {
+      userCount,
+      scheduleCount,
+      totalWalletAmount: totalWalletAmount || 0,
+    }
+
+    res
+      .status(StatusCodes.OK)
+      .json(generalResponse(StatusCodes.OK, dashboardData, [], returnSuccess))
   },
 )
 
@@ -170,7 +260,7 @@ export const acceptSchedule = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'schedule has already been accepted, cancelled, or fulfilled',
+            'Schedule has already been accepted, cancelled, or fulfilled',
           ),
         )
     }
@@ -203,7 +293,7 @@ export const acceptSchedule = catchController(
           StatusCodes.OK,
           {},
           [],
-          `schedule has been accepted, awaiting ${existingSchedule.category} `,
+          `Schedule has been accepted, awaiting ${existingSchedule.category} `,
         ),
       )
   },
@@ -222,7 +312,7 @@ export const cancelSchedule = catchController(
       return res
         .status(StatusCodes.NOT_FOUND)
         .json(
-          generalResponse(StatusCodes.NOT_FOUND, {}, [], 'invalid schedule id'),
+          generalResponse(StatusCodes.NOT_FOUND, {}, [], 'Invalid schedule id'),
         )
     }
 
@@ -238,7 +328,7 @@ export const cancelSchedule = catchController(
             StatusCodes.BAD_REQUEST,
             {},
             [],
-            'schedule has already been cancelled, or fulfilled',
+            'Schedule has already been cancelled, or fulfilled',
           ),
         )
     }
@@ -419,7 +509,7 @@ export const fulfillSchedule = catchController(
       },
     })
 
-    if (!wallet?.points || !wallet.naira_amount) {
+    if (!wallet?.points) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json(
@@ -435,7 +525,6 @@ export const fulfillSchedule = catchController(
 
     const calculatedNairaAmount =
       Number(calculatedPoints) / Number(parsedPointToNaira)
-    wallet.naira_amount = Number(wallet.naira_amount) + calculatedNairaAmount
 
     await walletRepository.save(wallet)
 
@@ -483,7 +572,7 @@ export const fulfillSchedule = catchController(
           StatusCodes.OK,
           {},
           [],
-          `schedule has been completed, user's wallet will be credited with ₦${calculatedNairaAmount.toLocaleString()}`,
+          `Schedule has been completed, user's wallet will be credited with ₦${calculatedNairaAmount.toLocaleString()}`,
         ),
       )
   },
@@ -491,12 +580,23 @@ export const fulfillSchedule = catchController(
 
 export const getAllSchedules = catchController(
   async (req: Request, res: Response) => {
-    const schedules = await scheduleRepository.find({
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
+    const [schedules, totalCount] = await scheduleRepository.findAndCount({
       relations: {
         user: true,
         transaction: true,
       },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
+
+    const pagination: Pagination = {
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalCount / Number(pageSize)),
+      pageSize: Number(pageSize),
+      totalCount,
+    }
 
     res.status(StatusCodes.OK).json(
       generalResponse(
@@ -519,6 +619,7 @@ export const getAllSchedules = catchController(
         })),
         [],
         returnSuccess,
+        pagination,
       ),
     )
   },
@@ -528,14 +629,25 @@ export * from './donation.controller'
 
 export const getAllAccounts = catchController(
   async (req: Request, res: Response) => {
-    const users = await userRepository.find({
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
+    const [users, totalCount] = await userRepository.findAndCount({
       relations: {
         wallet: true,
       },
       where: {
         role: 'user',
       },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     })
+
+    const pagination: Pagination = {
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalCount / Number(pageSize)),
+      pageSize: Number(pageSize),
+      totalCount,
+    }
 
     res.status(StatusCodes.OK).json(
       generalResponse(
@@ -558,6 +670,7 @@ export const getAllAccounts = catchController(
         })),
         [],
         returnSuccess,
+        pagination,
       ),
     )
   },
@@ -566,10 +679,16 @@ export const getAllAccounts = catchController(
 export const getTotalWalletAmount = catchController(
   async (req: Request, res: Response) => {
     const wallets = await walletRepository.find()
+    const configurationRepository = AppDataSource.getRepository(Configurations)
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
 
-    const totalAmount = wallets.reduce((acc, wallet) => {
-      return acc + Number(wallet.naira_amount)
+    const totalPoints = wallets.reduce((acc, wallet) => {
+      return acc + Number(wallet.points)
     }, 0)
+    const totalAmount =
+      totalPoints * (parseFloat(pointToNaira?.value || '0'))
 
     res.status(StatusCodes.OK).json(
       generalResponse(

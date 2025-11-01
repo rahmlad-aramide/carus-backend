@@ -12,14 +12,25 @@ import catchController from '../../utils/catchControllerAsyncs'
 
 export const getDonations = catchController(
   async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 10
+    const startIndex = (page - 1) * limit
+
     const donationRepository = AppDataSource.getRepository(Donation)
-    const campaigns = await donationRepository.find({
+    const [donations, total] = await donationRepository.findAndCount({
+      skip: startIndex,
+      take: limit,
       relations: ['contributions', 'contributions.user'],
     })
 
-    res
-      .status(StatusCodes.OK)
-      .json(generalResponse(StatusCodes.OK, campaigns, [], returnSuccess))
+    res.status(StatusCodes.OK).json(
+      generalResponse(StatusCodes.OK, donations, [], returnSuccess, {
+        totalCount: total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        pageSize: limit,
+      }),
+    )
   },
 )
 

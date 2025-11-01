@@ -14,6 +14,8 @@ import {
   userNotFound,
 } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
+import { DingConnectService } from '../../services/dingconnect'
+import { PaystackService } from '../../services/paystack'
 import { formatJoiError } from '../../utils/helper'
 import {
   redeemForAirtimeSchema,
@@ -37,7 +39,7 @@ export const redeemForAirtime = catchController(
         .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
-    const { network, amount, phoneNumber } = req.body
+    const { network, points, phoneNumber } = req.body
 
     const walletRepository = AppDataSource.getRepository(Wallet)
     const redemptionRepository = AppDataSource.getRepository(Redemption)
@@ -55,7 +57,7 @@ export const redeemForAirtime = catchController(
             StatusCodes.BAD_REQUEST,
             '',
             [],
-            'point to naira not set',
+            'Point to naira not set',
           ),
         )
     }
@@ -63,7 +65,7 @@ export const redeemForAirtime = catchController(
     const wallet = await walletRepository.findOne({
       where: { user: { id: user.id } },
     })
-    if (!wallet || (wallet.points || 0) < amount) {
+    if (!wallet || (wallet.points || 0) < points) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -71,27 +73,33 @@ export const redeemForAirtime = catchController(
         )
     }
 
-    const nairaAmount = amount * Number(pointToNaira?.value)
-    if ((wallet.naira_amount || 0) < nairaAmount) {
+    const wallet = await walletRepository.findOne({
+      where: { user: { id: user.id } },
+    })
+    if (!wallet || (wallet.points || 0) < points) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
-          generalResponse(
-            StatusCodes.BAD_REQUEST,
-            '',
-            [],
-            insufficientNairaAmount,
-          ),
+          generalResponse(StatusCodes.BAD_REQUEST, '', [], insufficientPoints),
         )
     }
 
-    wallet.points = (wallet.points || 0) - amount
-    wallet.naira_amount = (wallet.naira_amount || 0) - nairaAmount
+    const nairapoints = points * Number(pointToNaira?.value)
+
+    const dingConnectService = new DingConnectService()
+
+    await dingConnectService.sendAirtime(
+      phoneNumber,
+      nairapoints,
+      'MTN_NG_AIRTIME',
+    )
+
+    wallet.points = (wallet.points || 0) - points
     await walletRepository.save(wallet)
 
     const newRedemption = new Redemption()
     newRedemption.type = RedemptionType.AIRTIME
-    newRedemption.amount = amount
+    newRedemption.amount = points
     newRedemption.network = network
     newRedemption.phoneNumber = phoneNumber
     newRedemption.user = user
@@ -100,7 +108,12 @@ export const redeemForAirtime = catchController(
     res
       .status(StatusCodes.CREATED)
       .json(
-        generalResponse(StatusCodes.CREATED, newRedemption, [], returnSuccess),
+        generalResponse(
+          StatusCodes.CREATED,
+          newRedemption,
+          [],
+          `${returnSuccess}, you'll be credited with ${nairapoints} airtime soon.`,
+        ),
       )
   },
 )
@@ -122,7 +135,7 @@ export const redeemForCash = catchController(
         .json(generalResponse(StatusCodes.BAD_REQUEST, {}, details, message))
     }
 
-    const { amount, accountNumber, bankName, accountName } = req.body
+    const { points, accountNumber, bankName, accountName } = req.body
 
     const walletRepository = AppDataSource.getRepository(Wallet)
     const redemptionRepository = AppDataSource.getRepository(Redemption)
@@ -140,7 +153,7 @@ export const redeemForCash = catchController(
             StatusCodes.BAD_REQUEST,
             '',
             [],
-            'point to naira not set',
+            'Point to naira not set',
           ),
         )
     }
@@ -148,7 +161,7 @@ export const redeemForCash = catchController(
     const wallet = await walletRepository.findOne({
       where: { user: { id: user.id } },
     })
-    if (!wallet || (wallet.points || 0) < amount) {
+    if (!wallet || (wallet.points || 0) < points) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -156,8 +169,15 @@ export const redeemForCash = catchController(
         )
     }
 
-    const nairaAmount = amount * Number(pointToNaira?.value)
-    if ((wallet.naira_amount || 0) < nairaAmount) {
+    const nairapoints = points * Number(pointToNaira?.value)
+
+    const paystackService = new PaystackService()
+
+    const {
+      data: { account_name: resolvedAccountName },
+    } = await paystackService.verifyAccountNumber(accountNumber, bankName)
+
+    if (resolvedAccountName.toLowerCase() !== accountName.toLowerCase()) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
@@ -165,17 +185,33 @@ export const redeemForCash = catchController(
             StatusCodes.BAD_REQUEST,
             '',
             [],
-            insufficientNairaAmount,
+            'Account name does not match',
           ),
         )
     }
-    wallet.points = (wallet.points || 0) - amount
-    wallet.naira_amount = (wallet.naira_amount || 0) - nairaAmount
-    await walletRepository.save(wallet)
+
+    const {
+      data: { recipient_code: recipientCode },
+    } = await paystackService.createTransferRecipient(
+      accountName,
+      accountNumber,
+      bankName,
+    )
+
+    const transfer = await paystackService.initiateTransfer(
+      nairapoints,
+      recipientCode,
+      'Cash redemption',
+    )
+
+    if (transfer.status) {
+      wallet.points = (wallet.points || 0) - points
+      await walletRepository.save(wallet)
+    }
 
     const newRedemption = new Redemption()
     newRedemption.type = RedemptionType.CASH
-    newRedemption.amount = amount
+    newRedemption.amount = points
     newRedemption.accountNumber = accountNumber
     newRedemption.bankName = bankName
     newRedemption.accountName = accountName
@@ -185,7 +221,12 @@ export const redeemForCash = catchController(
     res
       .status(StatusCodes.CREATED)
       .json(
-        generalResponse(StatusCodes.CREATED, newRedemption, [], returnSuccess),
+        generalResponse(
+          StatusCodes.CREATED,
+          newRedemption,
+          [],
+          `${returnSuccess}, you'll be credited with #${nairapoints} soon.`,
+        ),
       )
   },
 )

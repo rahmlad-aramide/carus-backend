@@ -136,12 +136,73 @@ export const getPointToNaira = catchController(
             StatusCodes.NOT_FOUND,
             {},
             [],
-            'Point to naira does not exist',
+            'Point to naira not yet set!',
           ),
         )
     }
     res
       .status(StatusCodes.OK)
       .json(generalResponse(StatusCodes.OK, pointToNaira, [], returnSuccess))
+  },
+)
+
+export const setPointToNaira = catchController(
+  async (req: Request, res: Response) => {
+    const { value } = req.body
+
+    if (value === undefined || value === null || String(value).trim() === '') {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'Please provide a value',
+          ),
+        )
+    }
+
+    const numeric = Number(value)
+    if (Number.isNaN(numeric) || numeric <= 0) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            {},
+            [],
+            'Value must be a number greater than 0',
+          ),
+        )
+    }
+
+    let configuration = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+
+    if (configuration) {
+      configuration.value = String(numeric)
+    } else {
+      configuration = configurationRepository.create({
+        type: 'point_to_naira',
+        value: String(numeric),
+        createdAt: new Date(Date.now()),
+        updatedAt: new Date(Date.now()),
+      })
+    }
+
+    await configurationRepository.save(configuration)
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        generalResponse(
+          StatusCodes.OK,
+          configuration,
+          [],
+          'Point to naira value set successfully',
+        ),
+      )
   },
 )

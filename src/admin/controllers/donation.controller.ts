@@ -13,6 +13,7 @@ export const getDonations = async (req: Request, res: Response) => {
     const [donations, total] = await donationRepository.findAndCount({
       skip: startIndex,
       take: limit,
+      relations: ['contributions', 'contributions.user'],
     })
 
     res.status(200).json({

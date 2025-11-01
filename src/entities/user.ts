@@ -72,7 +72,7 @@ export class User {
   })
   username?: string | null
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   @IsDefined()
   @IsString()
   @IsNotEmpty()
@@ -111,6 +111,12 @@ export class User {
 
   @Column({ unique: true, nullable: true, type: 'varchar' })
   googleId?: string | null
+
+  @Column({ default: false })
+  isGoogleUser?: boolean
+
+  @Column({ default: false })
+  isDisabled?: boolean
 
   @OneToMany(() => Schedule, (orders) => orders.user)
   orders?: Schedule[]
