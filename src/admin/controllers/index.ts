@@ -146,6 +146,7 @@ export const getAllTransactions = catchController(
     const page = parseInt(req.query.page as string, 10) || 1
     const pageSize = parseInt(req.query.pageSize as string, 10) || 10
     const transactionRepository = AppDataSource.getRepository(Transaction)
+    const configurationRepository = AppDataSource.getRepository(Configurations)
     const [transactions, totalCount] = await transactionRepository.findAndCount(
       {
         relations: ['user', 'wallet'],
@@ -153,6 +154,9 @@ export const getAllTransactions = catchController(
         take: pageSize,
       },
     )
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
 
     const pagination: Pagination = {
       currentPage: Number(page),
@@ -164,21 +168,26 @@ export const getAllTransactions = catchController(
     res.status(StatusCodes.OK).json(
       generalResponse(
         StatusCodes.OK,
-        transactions.map((transaction) => ({
-          id: transaction.id,
-          amount: transaction.amount,
-          charges: transaction.charges,
-          status: transaction.status,
-          type: transaction.type,
-          user: {
-            id: transaction.user?.id,
-            email: transaction.user?.email,
-          },
-          wallet: {
-            id: transaction.wallet?.id,
-            naira_amount: transaction.wallet?.naira_amount,
-          },
-        })),
+        transactions.map((transaction) => {
+          const nairaAmount =
+            (transaction.wallet?.points || 0) *
+            (parseFloat(pointToNaira?.value || '0'))
+          return {
+            id: transaction.id,
+            amount: transaction.amount,
+            charges: transaction.charges,
+            status: transaction.status,
+            type: transaction.type,
+            user: {
+              id: transaction.user?.id,
+              email: transaction.user?.email,
+            },
+            wallet: {
+              id: transaction.wallet?.id,
+              naira_amount: nairaAmount,
+            },
+          }
+        }),
         [],
         returnSuccess,
         pagination,
@@ -193,18 +202,25 @@ export const getDashboardData = catchController(
     const scheduleRepository = AppDataSource.getRepository(Schedule)
     const walletRepository = AppDataSource.getRepository(Wallet)
 
-    const [userCount, scheduleCount, totalWalletAmount] = await Promise.all([
+    const configurationRepository = AppDataSource.getRepository(Configurations)
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+    const [userCount, scheduleCount, totalWalletPoints] = await Promise.all([
       userRepository.count({ where: { role: 'user' } }),
       scheduleRepository.count(),
       walletRepository
         .createQueryBuilder('wallet')
-        .select('SUM(wallet.naira_amount)', 'totalWalletAmount')
+        .select('SUM(wallet.points)', 'totalWalletPoints')
         .getRawOne(),
     ])
+    const totalWalletAmount =
+      (totalWalletPoints.totalWalletPoints || 0) *
+      (parseFloat(pointToNaira?.value || '0'))
     const dashboardData = {
       userCount,
       scheduleCount,
-      totalWalletAmount: totalWalletAmount.totalWalletAmount || 0,
+      totalWalletAmount: totalWalletAmount || 0,
     }
 
     res
@@ -493,7 +509,7 @@ export const fulfillSchedule = catchController(
       },
     })
 
-    if (!wallet?.points || !wallet.naira_amount) {
+    if (!wallet?.points) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json(
@@ -509,7 +525,6 @@ export const fulfillSchedule = catchController(
 
     const calculatedNairaAmount =
       Number(calculatedPoints) / Number(parsedPointToNaira)
-    wallet.naira_amount = Number(wallet.naira_amount) + calculatedNairaAmount
 
     await walletRepository.save(wallet)
 
@@ -664,10 +679,16 @@ export const getAllAccounts = catchController(
 export const getTotalWalletAmount = catchController(
   async (req: Request, res: Response) => {
     const wallets = await walletRepository.find()
+    const configurationRepository = AppDataSource.getRepository(Configurations)
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
 
-    const totalAmount = wallets.reduce((acc, wallet) => {
-      return acc + Number(wallet.naira_amount)
+    const totalPoints = wallets.reduce((acc, wallet) => {
+      return acc + Number(wallet.points)
     }, 0)
+    const totalAmount =
+      totalPoints * (parseFloat(pointToNaira?.value || '0'))
 
     res.status(StatusCodes.OK).json(
       generalResponse(

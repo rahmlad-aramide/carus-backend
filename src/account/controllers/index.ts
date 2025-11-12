@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes'
 
 import { CityEnum, RegionEnum } from '../../@types/user'
 import { AppDataSource } from '../../data-source'
+import { Configurations } from '../../entities/configurations'
 import { Contact } from '../../entities/contact'
 import { User } from '../../entities/user'
 import { Wallet } from '../../entities/wallet'
@@ -30,6 +31,7 @@ export const getAccount = catchController(
     }
 
     const walletRepository = AppDataSource.getRepository(Wallet)
+    const configurationRepository = AppDataSource.getRepository(Configurations)
 
     const wallet = await walletRepository.findOne({
       relations: {
@@ -41,6 +43,11 @@ export const getAccount = catchController(
         },
       },
     })
+    const pointToNaira = await configurationRepository.findOne({
+      where: { type: 'point_to_naira' },
+    })
+    const nairaAmount =
+      (wallet?.points || 0) * (parseFloat(pointToNaira?.value || '0'))
 
     res.status(StatusCodes.OK).json(
       generalResponse(
@@ -62,7 +69,7 @@ export const getAccount = catchController(
           created_at: user.createdAt,
           last_updated: user.updatedAt,
           wallet: {
-            naira_amount: wallet?.naira_amount,
+            naira_amount: nairaAmount,
             points: wallet?.points,
             last_transaction_time: wallet?.updatedAt,
           },
