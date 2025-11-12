@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import catchController from 'src/utils/catchControllerAsyncs'
 
 import { AppDataSource } from '../../data-source'
 import { Contact } from '../../entities/contact'
@@ -10,6 +9,7 @@ import {
   Pagination,
   userNotFound,
 } from '../../helpers/constants'
+import catchController from '../../utils/catchControllerAsyncs'
 
 export const toggleUserStatus = catchController(
   async (req: Request, res: Response) => {
