@@ -101,6 +101,19 @@ export const loginUser = catchController(
     }
 
     //check if usr is verified
+    if (user.isDisabled) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json(
+          generalResponse(
+            StatusCodes.UNAUTHORIZED,
+            {},
+            [],
+            'Account disabled, contact support',
+          ),
+        )
+    }
+
     if (user.status !== 'ACTIVE') {
       const otp = User.generateOTP()
       const otpExpires = new Date(Date.now() + 10 * 60 * 1000)
@@ -150,6 +163,7 @@ export const loginUser = catchController(
             first_name: user.first_name,
             last_name: user.last_name,
             email: user.email,
+            role: user.role,
             status: user.status,
             refresh_token: refresh_token,
             refresh_token_expires: refresh_token_expires,

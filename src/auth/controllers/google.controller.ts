@@ -120,6 +120,7 @@ export const googleAuth = catchController(
       first_name: first_name,
       last_name: last_name,
       googleId: googleId,
+      isGoogleUser: true,
     })
 
     await userRepository.save(newUser)
@@ -261,6 +262,7 @@ export const completeGoogleSignupProfile = catchController(
               first_name: user.first_name,
               last_name: user.last_name,
               email: user.email,
+              role: user.role,
               status: user.status,
               refresh_token: refresh_token,
               refresh_token_expires: refresh_token_expires,

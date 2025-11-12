@@ -10,6 +10,7 @@ import {
 import { createContribution } from '../controllers/contributionController'
 import verifyAdmin from '../../helpers/verifyAdmin'
 import verifyToken from '../../helpers/verifyToken'
+import upload from '../../utils/multer'
 
 const router = Router()
 const campaignPath = '/campaigns'
@@ -23,8 +24,8 @@ router.post('/contribute', verifyToken, createContribution)
 // Admin routes
 router.get(campaignPath, verifyAdmin, getCampaigns)
 router.get(campaignIdPath, verifyAdmin, getCampaign)
-router.post(campaignPath, verifyAdmin, createCampaign)
-router.put(campaignIdPath, verifyAdmin, updateCampaign)
+router.post(campaignPath, verifyAdmin, upload.single('image'), createCampaign)
+router.put(campaignIdPath, verifyAdmin, upload.single('image'), updateCampaign)
 router.delete(campaignIdPath, verifyAdmin, deleteCampaign)
 
 export default router
