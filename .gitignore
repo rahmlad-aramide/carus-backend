@@ -117,6 +117,10 @@ web_modules/
 .yarn/install-state.gz
 .pnp.*
 
+# pnpm
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
 dist
 
 client_secret_790900938127-aakc6s38okgiur8joc4p3hgjt2mcrmgn.apps.googleusercontent.com.json
