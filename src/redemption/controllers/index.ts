@@ -8,14 +8,12 @@ import { User } from '../../entities/user'
 import { Wallet } from '../../entities/wallet'
 import {
   generalResponse,
-  insufficientNairaAmount,
   insufficientPoints,
   returnSuccess,
   userNotFound,
 } from '../../helpers/constants'
 import catchController from '../../utils/catchControllerAsyncs'
-import { DingConnectService } from '../../services/dingconnect'
-import { PaystackService } from '../../services/paystack'
+import { InterswitchService } from '../../services/interswitch'
 import { formatJoiError } from '../../utils/helper'
 import {
   redeemForAirtimeSchema,
@@ -73,29 +71,36 @@ export const redeemForAirtime = catchController(
         )
     }
 
-    const wallet = await walletRepository.findOne({
-      where: { user: { id: user.id } },
-    })
-    if (!wallet || (wallet.points || 0) < points) {
+    const nairapoints = points * Number(pointToNaira?.value)
+
+    const interswitchService = new InterswitchService()
+
+    // In a real-world application, you would dynamically fetch the biller and payment item information.
+    // For simplicity, we'll use a hardcoded payment code for MTN 100 Naira.
+    const paymentCode = '10901' // Example payment code for MTN 100 Naira
+
+    const airtimePurchase = await interswitchService.purchaseAirtime(
+      paymentCode,
+      phoneNumber,
+      nairapoints,
+    )
+
+    if (airtimePurchase.data.ResponseCode === '90000') {
+      wallet.points = (wallet.points || 0) - points
+      await walletRepository.save(wallet)
+    } else {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json(
-          generalResponse(StatusCodes.BAD_REQUEST, '', [], insufficientPoints),
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            '',
+            [],
+            'Airtime purchase failed',
+          ),
         )
     }
 
-    const nairapoints = points * Number(pointToNaira?.value)
-
-    const dingConnectService = new DingConnectService()
-
-    await dingConnectService.sendAirtime(
-      phoneNumber,
-      nairapoints,
-      'MTN_NG_AIRTIME',
-    )
-
-    wallet.points = (wallet.points || 0) - points
-    await walletRepository.save(wallet)
 
     const newRedemption = new Redemption()
     newRedemption.type = RedemptionType.AIRTIME
@@ -171,11 +176,11 @@ export const redeemForCash = catchController(
 
     const nairapoints = points * Number(pointToNaira?.value)
 
-    const paystackService = new PaystackService()
+    const interswitchService = new InterswitchService()
 
     const {
-      data: { account_name: resolvedAccountName },
-    } = await paystackService.verifyAccountNumber(accountNumber, bankName)
+      data: { AccountName: resolvedAccountName },
+    } = await interswitchService.validateAccountNumber(accountNumber, bankName)
 
     if (resolvedAccountName.toLowerCase() !== accountName.toLowerCase()) {
       return res
@@ -190,24 +195,30 @@ export const redeemForCash = catchController(
         )
     }
 
-    const {
-      data: { recipient_code: recipientCode },
-    } = await paystackService.createTransferRecipient(
-      accountName,
+    const transfer = await interswitchService.transfer(
+      nairapoints,
       accountNumber,
       bankName,
+      user.last_name || '',
+      accountName,
     )
 
-    const transfer = await paystackService.initiateTransfer(
-      nairapoints,
-      recipientCode,
-      'Cash redemption',
-    )
-
-    if (transfer.status) {
+    if (transfer.data.ResponseCode === '90000') {
       wallet.points = (wallet.points || 0) - points
       await walletRepository.save(wallet)
+    } else {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          generalResponse(
+            StatusCodes.BAD_REQUEST,
+            '',
+            [],
+            'Transfer failed',
+          ),
+        )
     }
+
 
     const newRedemption = new Redemption()
     newRedemption.type = RedemptionType.CASH

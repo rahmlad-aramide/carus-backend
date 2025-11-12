@@ -16,7 +16,7 @@
     "migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert -d ./src/data-source.ts",
     "schema:sync": "yarn typeorm schema:sync -- -d src/data-source.ts",
     "migration:show": "yarn typeorm migration:show -- -d src/data-source.ts",
-    "migration:generate": "ts-node ./node_modules/typeorm/cli.js migration:generate -d src/data-source.ts",
+    "migration:generate": "yarn typeorm migration:generate -- -d src/data-source.ts",
     "migration:create": "yarn typeorm migration:create",
     "prepare": "husky install",
     "lint": "eslint --ignore-path .eslintignore \"src/**/*.ts\" --fix",
@@ -35,7 +35,6 @@
     "npm": "pleas-use-yarn"
   },
   "dependencies": {
-    "@ding-live/sdk": "^2.0.0",
     "@sentry/node": "^10.11.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/cookie-parser": "^1.4.3",
@@ -73,7 +72,6 @@
     "nodemailer": "^6.9.4",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "paystack-sdk": "^3.0.0",
     "pg": "^8.11.0",
     "pug": "^3.0.2",
     "redis": "^4.7.1",
