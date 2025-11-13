@@ -12,8 +12,8 @@ import {
   returnSuccess,
   userNotFound,
 } from '../../helpers/constants'
-import catchController from '../../utils/catchControllerAsyncs'
 import { InterswitchService } from '../../services/interswitch'
+import catchController from '../../utils/catchControllerAsyncs'
 import { formatJoiError } from '../../utils/helper'
 import {
   redeemForAirtimeSchema,
