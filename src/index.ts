@@ -26,6 +26,7 @@ import mainRoutes from './routes'
 import adminRoutes from './routes/adminRoutes'
 import { getUptime } from './utils/helper'
 
+const HOST = '0.0.0.0';
 const startServer = async () => {
   const app: express.Application = express()
 
@@ -110,11 +111,13 @@ const startServer = async () => {
     return res.status(allHealthy ? 200 : 503).json(healthCheck)
   })
 
+  // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
   app.use('/v1', mainRoutes)
   app.use('/v1/admin', adminRoutes)
   app.set('view engine', 'pug')
   app.set('views', path.join(__dirname + '../views'))
-  const server = app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, env.HOST, () => {
+    console.log("HOST: " + env.HOST)
     console.log(`Server is running at: http://localhost:${env.PORT}`)
   })
 

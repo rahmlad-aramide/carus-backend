@@ -3,7 +3,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const env = {
-  PORT: process.env.PORT,
+  PORT: Number(process.env.PORT),
+  HOST: process.env.HOST as string,
   BASE_URL: process.env.BASE_URL,
   ENVIRONMENT: process.env.NODE_ENV,
   AUTH: {
