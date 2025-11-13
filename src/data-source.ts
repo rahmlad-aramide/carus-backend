@@ -11,14 +11,14 @@ export const AppDataSource = new DataSource({
   username: env.DB_USERNAME,
   password: String(process.env.DB_PASSWORD),
   database: process.env.DB_NAME,
-  entities: [
-    './dist/entities/*.js'
-  ],
-  migrations: [
-    './dist/migrations/*.js' // Same for migrations
-  ],
-  // entities: [path.join(__dirname + '/entities/*.{js,ts}')],
-  // migrations: [path.join(__dirname + '/migrations/*.{js,ts}')],
+  // entities: [
+  //   './dist/entities/*.js'
+  // ],
+  // migrations: [
+  //   './dist/migrations/*.js' // Same for migrations
+  // ],
+  entities: [path.join(__dirname + '/entities/*.{js,ts}')],
+  migrations: [path.join(__dirname + '/migrations/*.{js,ts}')],
   // entities: ['**/entities/*.ts'],
   // migrations: ['**/migrations/*.ts'],
   // entities: ['./entities/*.ts', './entities/*.js'],
