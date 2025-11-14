@@ -1,22 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2016",
+    "target": "ES2019",
     "module": "CommonJS",
-    "lib": ["ESNext", "DOM"],
-    "rootDir": "./",
-    "baseUrl": "./",
-    "outDir": "./dist",
+    "lib": ["ESNext"],
+    "moduleResolution": "Node",
+    "rootDir": "src",
+    "outDir": "dist/src",
     "esModuleInterop": true,
-    "strict": true,
     "experimentalDecorators": true,
-    "noImplicitAny": true,
     "emitDecoratorMetadata": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "sourceMap": true,
+    "strict": true,
     "skipLibCheck": true,
-    "typeRoots": ["src/@types, node_modules/@types"]
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": ["./src/@types", "./node_modules/@types"]
   },
-  "include": ["views/**/*.pug", "src/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }
