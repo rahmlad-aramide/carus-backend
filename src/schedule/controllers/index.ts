@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import fs from 'fs/promises'
 import { StatusCodes } from 'http-status-codes'
-import { User } from 'src/entities/user'
+import { User } from '../../entities/user'
 
 import {
   CategoryEnum,

@@ -3,21 +3,26 @@
   "version": "0.0.1",
   "description": "",
   "repository": "",
-  "author": "Tofunmi <https://github.com/tofunmiakin>",
+  "author": "Rahmlad <https://github.com/rahmlad-aramide>",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "tsc && yarn run copy-views",
-    "copy-views": "copyfiles -u 1 views/**/* dist/views",
-    "start": "node dist/src/index.js -p 5000",
+    "clean": "rm -rf dist",
+    "build": "yarn run clean && tsc && copyfiles -u 1 views/**/* dist/src/views",
     "dev": "nodemon src/index.ts",
-    "typeorm": "typeorm-ts-node-commonjs",
-    "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run -d src/data-source.ts",
-    "migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert -d ./src/data-source.ts",
-    "schema:sync": "yarn typeorm schema:sync -- -d src/data-source.ts",
-    "migration:show": "yarn typeorm migration:show -- -d src/data-source.ts",
-    "migration:generate": "yarn typeorm migration:generate -- -d src/data-source.ts",
-    "migration:create": "yarn typeorm migration:create",
+    "start": "NODE_ENV=production node dist/src/index.js",
+    
+    "typeorm": "ts-node ./node_modules/typeorm/cli.js",
+
+    "migration:generate": "yarn run typeorm -- migration:generate src/migrations -d src/data-source.ts",
+    "migration:create": "yarn run typeorm -- migration:create src/migrations",
+    
+    "migration:run": "yarn run typeorm -- migration:run -d src/data-source.ts",
+    "migration:revert": "yarn run typeorm -- migration:revert -d src/data-source.ts",
+
+    "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/src/data-source.js",
+    "migration:revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/src/data-source.js",
+    
     "prepare": "husky install",
     "lint": "eslint --ignore-path .eslintignore \"src/**/*.ts\" --fix",
     "lint:check": "eslint --ignore-path .eslintignore \"src/**/*.ts\"",
